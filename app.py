@@ -71,5 +71,6 @@ if prompt := st.chat_input("Your response here..."):
     ask_next_question()
 
 # Display current role (for debugging)
+st.sidebar.title("Dev Debug")
 st.sidebar.write(f"Current role: {role_name}")
 st.sidebar.write(f"Current candidate: {candidate_name}")
