@@ -16,12 +16,13 @@ st.title(f"{candidate_name} | {role_name} Interview")
 
 
 # Pre-set list of interview questions
-interview_questions = [
-    "Can you tell me about yourself?",
-    "Why do you want this job?",
-    "What are your strengths?",
-    "What are your weaknesses?",
-    "Where do you see yourself in 5 years?"
+interview_questions = [    
+"Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you focus on lead generation?",
+"What design tools have you used to create digital-first content, and do you have experience with video content creation?",
+"How do you approach setting and measuring KPIs for social media growth, such as follower growth and engagement metrics?",
+"Can you provide examples of successful marketing strategies you've developed and executed that increased conversions and brand awareness?",
+"How do you balance reporting and analytics with creativity in your marketing campaigns, and what metrics do you typically report on?",
+"What excites you about joining a collaborative and innovative team in a growing law firm, and how do you see yourself contributing to our team culture?",
 ]
 
 # Initialize chat history and question index
