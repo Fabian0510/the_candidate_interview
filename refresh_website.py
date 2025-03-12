@@ -17,6 +17,14 @@ logging.basicConfig(
     ]
 )
 
+# List of special CV filenames that should get rank 5 when interview is complete
+SPECIAL_CV_FILES = [
+    "101619_original_cv.pdf",
+    "102541_original_cv.pdf",
+    "103272_original_cv.pdf",
+    "111467_original_cv.pdf"
+]
+
 # API Token
 TOKEN = 'EgEls5yPpzOqhGdtL1CDcZkNolXhQhIFfwd4DIe0'
 
@@ -183,18 +191,27 @@ def get_all_candidate_job_pairs(jobs_data):
                 first_name = cv.get("First Name")
                 last_name = cv.get("Last Name")
                 
+                # Extract CV file name from CV array
+                cv_filename = None
+                cv_files = cv.get("CV", [])
+                if cv_files and len(cv_files) > 0:
+                    # Use the title from the first file in the array
+                    cv_filename = cv_files[0].get("title")
+                
                 # Look up the candidate ID
                 candidate_id = find_candidate_id(first_name, last_name)
                 
                 logging.info(f"  Found candidate: {first_name} {last_name}" + 
-                           (f" (ID: {candidate_id})" if candidate_id else " (ID not found)"))
+                           (f" (ID: {candidate_id})" if candidate_id else " (ID not found)") +
+                           (f", CV File: {cv_filename}" if cv_filename else ", No CV File"))
                 
                 pairs.append({
                     "job_title": job_title,
                     "client": client,
                     "first_name": first_name,
                     "last_name": last_name,
-                    "candidate_id": candidate_id
+                    "candidate_id": candidate_id,
+                    "cv_filename": cv_filename
                 })
     
     logging.info(f"Found {len(pairs)} total candidate-job pairs")
@@ -248,7 +265,7 @@ def link_interview_to_candidate(interview_id: int, candidate_id: int) -> bool:
         logging.error(f"Error linking interview to candidate: {str(e)}")
         return False
 
-def create_interview(client, job_title, first_name, last_name, candidate_id=None):
+def create_interview(client, job_title, first_name, last_name, candidate_id=None, cv_filename=None):
     interview_date = (datetime.now() + timedelta(weeks=2)).strftime("%Y-%m-%d")
     current_datetime = get_current_datetime()
     
@@ -257,6 +274,7 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
     logging.info(f"  Job Title: {job_title}")
     logging.info(f"  Candidate: {first_name} {last_name}")
     logging.info(f"  Candidate ID: {candidate_id or 'Not found'}")
+    logging.info(f"  CV Filename: {cv_filename or 'Not available'}")
     logging.info(f"  Scheduled Date: {interview_date}")
     logging.info(f"  Date Added: {current_datetime}")
     
@@ -273,7 +291,8 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
         "Interview Status": "Ready for Interview",  # Updated to "Ready for Interview"
         "Interview Rank": 0,
         "Questions": interview_questions,  # Using the randomly selected questions
-        "Date Added": current_datetime
+        "Date Added": current_datetime,
+        "CV Name": cv_filename  # Added CV Name field
     }
     
     logging.debug("Sending API request with payload:")
@@ -338,6 +357,57 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
     except Exception as e:
         logging.error(f"Error creating interview: {str(e)}")
         return False
+
+def update_interview_ranks():
+    """Check interviews with 'Complete' status and special CV filenames and set their rank to 5."""
+    logging.info("=== Checking for Completed Interviews with Special CV Files ===")
+    
+    try:
+        # Fetch existing interviews
+        interviews_response = requests.get(interview_url, headers=headers, params=params)
+        
+        if interviews_response.status_code != 200:
+            logging.error(f"Failed to fetch interviews. Status code: {interviews_response.status_code}")
+            return 0
+            
+        interviews_data = interviews_response.json()
+        existing_interviews = interviews_data.get('list', [])
+        logging.info(f"Found {len(existing_interviews)} existing interviews to check")
+        
+        updated_count = 0
+        for interview in existing_interviews:
+            interview_id = interview.get('Id')
+            interview_status = interview.get('Interview Status')
+            cv_name = interview.get('CV Name')
+            current_rank = interview.get('Interview Rank')
+            
+            # Check if the interview status is "Complete" and the CV name is in our special list
+            if (interview_id is not None and 
+                interview_status == "Complete" and 
+                cv_name in SPECIAL_CV_FILES and
+                current_rank != 5):
+                
+                update_payload = {
+                    "Id": interview_id,
+                    "Interview Rank": 5
+                }
+                
+                logging.info(f"Setting rank to 5 for interview ID {interview_id} with CV: {cv_name}")
+                logging.info(f"Update payload: {json.dumps(update_payload)}")
+                
+                update_response = requests.patch(interview_url, headers=headers, json=update_payload)
+                if update_response.status_code >= 200 and update_response.status_code < 300:
+                    logging.info(f"✓ Successfully updated interview rank for {interview_id}")
+                    updated_count += 1
+                else:
+                    logging.error(f"✗ Failed to update interview rank. Status code: {update_response.status_code}")
+                    logging.error(f"Error response: {update_response.text}")
+        
+        logging.info(f"=== Updated rank for {updated_count} completed interviews with special CV files ===")
+        return updated_count
+    except Exception as e:
+        logging.error(f"Error updating interview ranks: {str(e)}")
+        return 0
 
 def update_existing_interviews():
     """Updates all existing interviews to set status to Ready for Interview and add questions."""
@@ -432,7 +502,8 @@ def check_and_create_interviews():
                     pair["job_title"], 
                     pair["first_name"], 
                     pair["last_name"],
-                    pair.get("candidate_id")  # Pass the candidate ID for linking
+                    pair.get("candidate_id"),  # Pass the candidate ID for linking
+                    pair.get("cv_filename")    # Pass the CV filename
                 )
                 if success:
                     created_count += 1
@@ -459,14 +530,21 @@ def main():
     updated_count = update_existing_interviews()
     logging.info(f"Updated {updated_count} existing interviews with questions and status")
     
+    # Check for completed interviews with special CV files and update ranks
+    rank_updates = update_interview_ranks()
+    logging.info(f"Updated rank for {rank_updates} interviews with special CV files")
+    
     # Configuration
     check_interval_seconds = 10  # Check every 10 seconds
     reload_questions_interval = 300  # Reload questions every 5 minutes (300 seconds)
+    rank_check_interval = 60  # Check ranks every minute
     
     logging.info(f"Monitor will check for updates every {check_interval_seconds} seconds")
     logging.info(f"Questions will be reloaded every {reload_questions_interval} seconds")
+    logging.info(f"Interview ranks will be checked every {rank_check_interval} seconds")
     
     last_questions_reload = datetime.now()
+    last_rank_check = datetime.now()
     
     try:
         while True:
@@ -476,6 +554,16 @@ def main():
                 global ALL_QUESTIONS
                 ALL_QUESTIONS = load_questions_from_file()
                 last_questions_reload = datetime.now()
+            
+            # Check if it's time to check interview ranks
+            if (datetime.now() - last_rank_check).total_seconds() >= rank_check_interval:
+                logging.info("Checking for interviews that need rank updates...")
+                rank_updates = update_interview_ranks()
+                if rank_updates > 0:
+                    logging.info(f"Updated rank for {rank_updates} interviews with special CV files")
+                else:
+                    logging.info("No interview ranks needed updating")
+                last_rank_check = datetime.now()
             
             new_interviews = check_and_create_interviews()
             
