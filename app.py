@@ -13,9 +13,20 @@ def response_generator(response_text):
 
 # API configuration
 API_URL = "http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records"  # Using the interview URL from original code
+
+# Handle token configuration with fallback
+try:
+    # Try to get token from Streamlit secrets
+    API_TOKEN = st.secrets.get("API_TOKEN")
+except Exception:
+    # Fallback to environment variable or hardcoded token for development
+    import os
+    API_TOKEN = os.environ.get("API_TOKEN", "EgEls5yPpzOqhGdtL1CDcZkNolXhQhIFfwd4DIe0")  # Default token from example
+
 HEADERS = {
     'accept': 'application/json',
-    'xc-token': st.secrets.get("API_TOKEN", "YOUR_TOKEN_HERE")  # Use Streamlit secrets for token
+    'xc-token': API_TOKEN,
+    'Content-Type': 'application/json'
 }
 
 # Get URL parameters
@@ -191,6 +202,7 @@ st.sidebar.write(f"Current role: {role_name}")
 st.sidebar.write(f"Current candidate: {candidate_name}")
 st.sidebar.write(f"Interview ID: {interview_id}")
 st.sidebar.write(f"Question index: {st.session_state.question_index}/{len(interview_questions)}")
+st.sidebar.write(f"API Token: {API_TOKEN[:5]}..." if API_TOKEN else "No API token found")
 
 # Display current interview data
 if st.sidebar.checkbox("Show interview data"):
