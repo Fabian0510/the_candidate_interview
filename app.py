@@ -4,6 +4,7 @@ import time
 import json
 import requests
 from datetime import datetime
+import re
 
 # Streamed response emulator
 def response_generator(response_text):
@@ -12,7 +13,9 @@ def response_generator(response_text):
         time.sleep(0.05)
 
 # API configuration
-API_URL = "http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records"  # Using the interview URL from original code
+BASE_API_URL = "http://20.254.105.163:8080/api/v2"
+INTERVIEW_TABLE = "mpims4p3zrwsarx"
+INTERVIEW_URL = f"{BASE_API_URL}/tables/{INTERVIEW_TABLE}/records"
 
 # Handle token configuration with fallback
 try:
@@ -29,10 +32,73 @@ HEADERS = {
     'Content-Type': 'application/json'
 }
 
+# Function to fetch questions from the API
+def fetch_interview_questions(interview_id):
+    try:
+        # Construct the API URL with query parameters
+        questions_url = f"{INTERVIEW_URL}?fields=Questions&where=(Id,eq,{interview_id})&limit=25&shuffle=0&offset=0"
+        
+        st.sidebar.write(f"Fetching questions from API...")
+        st.sidebar.code(questions_url)
+        
+        # Send the GET request
+        response = requests.get(questions_url, headers=HEADERS)
+        
+        if response.status_code == 200:
+            data = response.json()
+            st.sidebar.success("✓ Questions fetched successfully")
+            
+            # Check if we got any records back
+            if data and 'list' in data and len(data['list']) > 0:
+                # Extract the Questions field from the first record
+                questions_text = data['list'][0].get('Questions', '')
+                
+                if not questions_text:
+                    st.sidebar.warning("No questions found in response. Using default questions.")
+                    return get_default_questions()
+                
+                # Parse the numbered list of questions
+                # Split the text by newlines first, then extract question text
+                questions_list = []
+                for line in questions_text.split('\n'):
+                    # Use regex to match numbered questions (e.g., "1. Question text")
+                    match = re.match(r'^\s*\d+\.\s*(.*\S)\s*$', line)
+                    if match:
+                        # Add the question text to our list
+                        questions_list.append(match.group(1))
+                
+                if not questions_list:
+                    st.sidebar.warning("Failed to parse questions. Using default questions.")
+                    return get_default_questions()
+                
+                st.sidebar.write(f"Found {len(questions_list)} questions")
+                return questions_list
+            else:
+                st.sidebar.warning("No interview data found. Using default questions.")
+                return get_default_questions()
+        else:
+            st.sidebar.error(f"Failed to fetch questions. Status code: {response.status_code}")
+            st.sidebar.error(f"Error response: {response.text}")
+            return get_default_questions()
+    except Exception as e:
+        st.sidebar.error(f"Error fetching questions: {str(e)}")
+        return get_default_questions()
+
+# Default questions as fallback
+def get_default_questions():
+    return [    
+        "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you focus on lead generation?",
+        "What design tools have you used to create digital-first content, and do you have experience with video content creation?",
+        "How do you approach setting and measuring KPIs for social media growth, such as follower growth and engagement metrics?",
+        "Can you provide examples of successful marketing strategies you've developed and executed that increased conversions and brand awareness?",
+        "How do you balance reporting and analytics with creativity in your marketing campaigns, and what metrics do you typically report on?",
+        "What excites you about joining a collaborative and innovative team in a growing law firm, and how do you see yourself contributing to our team culture?",
+    ]
+
 # Get URL parameters
 role_name = st.query_params.get("role", "Unknown Role")
 candidate_name = st.query_params.get("candidate", "Unknown User")
-interview_id = st.query_params.get("interview_id", "No ID")
+interview_id = st.query_params.get("interview_id", "1")  # Default to ID 1 if not provided
 
 # Initialize interview data structure
 if "interview_data" not in st.session_state:
@@ -46,21 +112,13 @@ if "interview_data" not in st.session_state:
 
 st.title(f"{candidate_name} | {role_name} Interview")
 
-# Pre-set list of interview questions
-interview_questions = [    
-    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you focus on lead generation?",
-    "What design tools have you used to create digital-first content, and do you have experience with video content creation?",
-    "How do you approach setting and measuring KPIs for social media growth, such as follower growth and engagement metrics?",
-    "Can you provide examples of successful marketing strategies you've developed and executed that increased conversions and brand awareness?",
-    "How do you balance reporting and analytics with creativity in your marketing campaigns, and what metrics do you typically report on?",
-    "What excites you about joining a collaborative and innovative team in a growing law firm, and how do you see yourself contributing to our team culture?",
-]
-
-# Initialize chat history and question index
+# Initialize chat history and fetch interview questions
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": f"Good morning, {candidate_name}! Welcome to The Candidate's interview platform!"}
     ]
+    # Fetch questions from API
+    st.session_state.interview_questions = fetch_interview_questions(interview_id)
     st.session_state.question_index = 0
     st.session_state.interview_complete = False
 
@@ -89,7 +147,7 @@ def update_interview_status():
         st.sidebar.code(json.dumps(update_payload, indent=2))
         
         # Send the PATCH request
-        patch_response = requests.patch(API_URL, headers=HEADERS, json=update_payload)
+        patch_response = requests.patch(INTERVIEW_URL, headers=HEADERS, json=update_payload)
         
         if patch_response.status_code == 200:
             st.sidebar.success(f"✓ Interview status updated to Complete with rank {interview_rank}")
@@ -105,9 +163,9 @@ def update_interview_status():
 
 # Function to ask the next question
 def ask_next_question():
-    if st.session_state.question_index < len(interview_questions):
+    if st.session_state.question_index < len(st.session_state.interview_questions):
         # Get the current question
-        question = interview_questions[st.session_state.question_index]
+        question = st.session_state.interview_questions[st.session_state.question_index]
         
         # Display the question
         with st.chat_message("assistant"):
@@ -151,8 +209,8 @@ if prompt := st.chat_input("Your response here..."):
         st.markdown(prompt)
     
     # Store the response in the interview data
-    if st.session_state.question_index > 0 and st.session_state.question_index <= len(interview_questions):
-        current_question = interview_questions[st.session_state.question_index - 1]
+    if st.session_state.question_index > 0 and st.session_state.question_index <= len(st.session_state.interview_questions):
+        current_question = st.session_state.interview_questions[st.session_state.question_index - 1]
         
         # Add the question-answer pair to the responses list
         st.session_state.interview_data["responses"].append({
@@ -169,10 +227,16 @@ st.sidebar.title("Dev Debug")
 st.sidebar.write(f"Current role: {role_name}")
 st.sidebar.write(f"Current candidate: {candidate_name}")
 st.sidebar.write(f"Interview ID: {interview_id}")
-st.sidebar.write(f"Question index: {st.session_state.question_index}/{len(interview_questions)}")
+st.sidebar.write(f"Question index: {st.session_state.question_index}/{len(st.session_state.interview_questions)}")
 st.sidebar.write(f"API Token: {API_TOKEN[:5]}..." if API_TOKEN else "No API token found")
 
 # Display current interview data
 if st.sidebar.checkbox("Show interview data"):
     st.sidebar.write("Current interview data:")
     st.sidebar.code(json.dumps(st.session_state.interview_data, indent=2))
+
+# Display current questions
+if st.sidebar.checkbox("Show questions"):
+    st.sidebar.write("Interview questions:")
+    for i, q in enumerate(st.session_state.interview_questions):
+        st.sidebar.write(f"{i+1}. {q}")

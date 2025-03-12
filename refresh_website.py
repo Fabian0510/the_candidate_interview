@@ -4,6 +4,7 @@ import json
 import urllib.parse
 import time
 import logging
+import random
 from typing import Dict, Any, Optional, List
 
 # Configure logging
@@ -42,11 +43,63 @@ portal_base_url = "http://20.254.105.163:8501/"
 # c4gkn9aehmsg1n5 = Link field ID for connecting to candidates
 link_api_url = "http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/{recordId}"
 
-# Define interview questions
-ALL_QUESTIONS = [
-    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation in the past?",
-    "What strategies have you used to increase social media engagement and follower growth, and how do you set and measure KPIs for these efforts?",
-]
+# Load interview questions from file
+def load_questions_from_file(filename="interview_questions.txt"):
+    """
+    Load interview questions from a text file.
+    Each question should be on a separate line in the file.
+    
+    Args:
+        filename (str): Path to the file containing questions
+        
+    Returns:
+        list: List of questions
+    """
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            # Read lines and strip whitespace, filter out empty lines
+            questions = [line.strip() for line in file if line.strip()]
+            logging.info(f"Loaded {len(questions)} questions from {filename}")
+            return questions
+    except FileNotFoundError:
+        logging.warning(f"Questions file {filename} not found. Using default questions.")
+        # Return default questions if file not found
+        return [
+            "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation in the past?",
+            "What strategies have you used to increase social media engagement and follower growth, and how do you set and measure KPIs for these efforts?",
+        ]
+    except Exception as e:
+        logging.error(f"Error loading questions from file: {str(e)}")
+        # Return default questions on error
+        return [
+            "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation in the past?",
+            "What strategies have you used to increase social media engagement and follower growth, and how do you set and measure KPIs for these efforts?",
+        ]
+
+# Load questions when module is imported
+ALL_QUESTIONS = load_questions_from_file()
+
+def get_random_questions(num_questions=6):
+    """
+    Select a specified number of random questions from the ALL_QUESTIONS list
+    and format them as a single string with each question on a new line.
+    
+    Args:
+        num_questions (int): Number of questions to select (default: 6)
+        
+    Returns:
+        str: A formatted string of randomly selected questions
+    """
+    # Ensure we don't try to select more questions than available
+    num_to_select = min(num_questions, len(ALL_QUESTIONS))
+    
+    # Select random questions without replacement if possible
+    selected_questions = random.sample(ALL_QUESTIONS, num_to_select) if num_to_select <= len(ALL_QUESTIONS) else ALL_QUESTIONS.copy()
+    
+    # Format the questions as a string with each question on a single line
+    formatted_questions = "\n".join([f"{i+1}. {q}" for i, q in enumerate(selected_questions)])
+    
+    return formatted_questions
 
 def get_interview_title(client, job_title, first_name, last_name):
     client_prefix = f"{client} - " if client else ""
@@ -210,13 +263,16 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
     # Initially create with a temporary portal link
     initial_portal_link = get_portal_link(job_title, first_name, last_name)
     
+    # Get random questions for this interview
+    interview_questions = get_random_questions()
+    
     payload = {
         "Title": get_interview_title(client, job_title, first_name, last_name),
         "Interview Portal Link": initial_portal_link,
         "Interview Due Date": interview_date,
         "Interview Status": "Ready for Interview",  # Updated to "Ready for Interview"
         "Interview Rank": 0,
-        "Questions": INTERVIEW_QUESTIONS,  # Added the interview questions
+        "Questions": interview_questions,  # Using the randomly selected questions
         "Date Added": current_datetime
     }
     
@@ -303,9 +359,12 @@ def update_existing_interviews():
         for interview in existing_interviews:
             interview_id = interview.get('Id')
             if interview_id is not None:
+                # Generate new random questions for each interview
+                interview_questions = get_random_questions()
+                
                 update_payload = {
                     "Id": interview_id,
-                    "Text": INTERVIEW_QUESTIONS,
+                    "Text": interview_questions,
                     "Interview Status": "Ready for Interview"
                 }
                 
@@ -402,11 +461,22 @@ def main():
     
     # Configuration
     check_interval_seconds = 10  # Check every 10 seconds
+    reload_questions_interval = 300  # Reload questions every 5 minutes (300 seconds)
     
     logging.info(f"Monitor will check for updates every {check_interval_seconds} seconds")
+    logging.info(f"Questions will be reloaded every {reload_questions_interval} seconds")
+    
+    last_questions_reload = datetime.now()
     
     try:
         while True:
+            # Check if it's time to reload questions
+            if (datetime.now() - last_questions_reload).total_seconds() >= reload_questions_interval:
+                logging.info("Reloading interview questions from file...")
+                global ALL_QUESTIONS
+                ALL_QUESTIONS = load_questions_from_file()
+                last_questions_reload = datetime.now()
+            
             new_interviews = check_and_create_interviews()
             
             if new_interviews > 0:
