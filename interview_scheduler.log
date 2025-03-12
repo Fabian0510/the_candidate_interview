@@ -1,0 +1,408 @@
+2025-03-12 12:21:33,616 - INFO - === Starting Continuous Interview Scheduling Monitor ===
+2025-03-12 12:21:33,616 - INFO - Monitor will check for updates every 10 seconds
+2025-03-12 12:21:33,616 - INFO - === Starting Interview Scheduling Check ===
+2025-03-12 12:21:33,616 - INFO - Time: 2025-03-12 12:21:33
+2025-03-12 12:21:33,616 - INFO - === Fetching Current Jobs and Candidates ===
+2025-03-12 12:21:33,671 - INFO - Successfully fetched 4 jobs
+2025-03-12 12:21:33,672 - INFO - === Fetching Current Interviews ===
+2025-03-12 12:21:33,714 - INFO - Successfully fetched 0 existing interviews
+2025-03-12 12:21:33,714 - INFO - Found 0 existing interview titles
+2025-03-12 12:21:33,714 - INFO - Extracting candidate-job pairs...
+2025-03-12 12:21:33,714 - INFO - Processing job: Chief of Icecream for client: Nestle
+2025-03-12 12:21:33,767 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:21:33,767 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:21:33,816 - INFO - Found candidate ID 1 for Bob Geldof
+2025-03-12 12:21:33,816 - INFO -   Found candidate: Bob Geldof (ID: 1)
+2025-03-12 12:21:33,879 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:21:33,879 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:21:33,880 - INFO - Processing job: Head of Data for client: Facebook
+2025-03-12 12:21:33,933 - INFO - Found candidate ID 3 for Jonathan Dimbleby
+2025-03-12 12:21:33,933 - INFO -   Found candidate: Jonathan Dimbleby (ID: 3)
+2025-03-12 12:21:33,982 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:21:33,982 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:21:33,983 - INFO - Processing job: Lead Data Scientist for client: Boots
+2025-03-12 12:21:34,033 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:21:34,033 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:21:34,033 - INFO - Processing job: Software Engineer for client: NVIDIA
+2025-03-12 12:21:34,082 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:21:34,082 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:21:34,138 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:21:34,138 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:21:34,138 - INFO - Found 8 total candidate-job pairs
+2025-03-12 12:21:34,138 - INFO - === Creating Missing Interviews ===
+2025-03-12 12:21:34,138 - INFO - Creating interview for:
+2025-03-12 12:21:34,138 - INFO -   Client: Nestle
+2025-03-12 12:21:34,138 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:21:34,138 - INFO -   Candidate: Geoff Jones
+2025-03-12 12:21:34,138 - INFO -   Candidate ID: 2
+2025-03-12 12:21:34,138 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:21:34,138 - INFO -   Date Added: 2025-03-12 12:21:34
+2025-03-12 12:21:34,198 - INFO - ✓ Interview created successfully with ID: 1
+2025-03-12 12:21:34,199 - INFO - Updating portal link with actual interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Geoff%20Jones&interview_id=1
+2025-03-12 12:21:34,199 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records/1
+2025-03-12 12:21:34,235 - WARNING - ✗ Failed to update portal link. Status code: 404
+2025-03-12 12:21:34,235 - WARNING - Error response: {"msg":"Cannot PATCH /api/v2/tables/mpims4p3zrwsarx/records/1"}
+2025-03-12 12:21:36,236 - INFO - Linking interview 1 to candidate 2
+2025-03-12 12:21:36,237 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/1
+2025-03-12 12:21:36,237 - INFO - Payload: [{"Id": 2}]
+2025-03-12 12:21:36,334 - INFO - Response status code: 201
+2025-03-12 12:21:36,334 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:21:36 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:21:36,334 - INFO - Response body: true
+2025-03-12 12:21:36,334 - INFO - ✓ Successfully linked interview 1 to candidate 2
+2025-03-12 12:21:36,334 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:21:36,334 - INFO - Creating interview for:
+2025-03-12 12:21:36,334 - INFO -   Client: Nestle
+2025-03-12 12:21:36,334 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:21:36,334 - INFO -   Candidate: Bob Geldof
+2025-03-12 12:21:36,334 - INFO -   Candidate ID: 1
+2025-03-12 12:21:36,334 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:21:36,334 - INFO -   Date Added: 2025-03-12 12:21:36
+2025-03-12 12:21:36,394 - INFO - ✓ Interview created successfully with ID: 2
+2025-03-12 12:21:36,394 - INFO - Updating portal link with actual interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Bob%20Geldof&interview_id=2
+2025-03-12 12:21:36,394 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records/2
+2025-03-12 12:21:36,429 - WARNING - ✗ Failed to update portal link. Status code: 404
+2025-03-12 12:21:36,430 - WARNING - Error response: {"msg":"Cannot PATCH /api/v2/tables/mpims4p3zrwsarx/records/2"}
+2025-03-12 12:21:38,431 - INFO - Linking interview 2 to candidate 1
+2025-03-12 12:21:38,431 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/2
+2025-03-12 12:21:38,431 - INFO - Payload: [{"Id": 1}]
+2025-03-12 12:21:38,533 - INFO - Response status code: 201
+2025-03-12 12:21:38,533 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:21:38 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:21:38,533 - INFO - Response body: true
+2025-03-12 12:21:38,533 - INFO - ✓ Successfully linked interview 2 to candidate 1
+2025-03-12 12:21:38,533 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:21:38,534 - INFO - Creating interview for:
+2025-03-12 12:21:38,534 - INFO -   Client: Nestle
+2025-03-12 12:21:38,534 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:21:38,534 - INFO -   Candidate: Michael Cain
+2025-03-12 12:21:38,534 - INFO -   Candidate ID: 4
+2025-03-12 12:21:38,534 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:21:38,534 - INFO -   Date Added: 2025-03-12 12:21:38
+2025-03-12 12:21:38,618 - INFO - ✓ Interview created successfully with ID: 3
+2025-03-12 12:21:38,618 - INFO - Updating portal link with actual interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Michael%20Cain&interview_id=3
+2025-03-12 12:21:38,618 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records/3
+2025-03-12 12:21:38,658 - WARNING - ✗ Failed to update portal link. Status code: 404
+2025-03-12 12:21:38,658 - WARNING - Error response: {"msg":"Cannot PATCH /api/v2/tables/mpims4p3zrwsarx/records/3"}
+2025-03-12 12:21:38,808 - INFO - Monitor stopped by user
+2025-03-12 12:21:38,808 - INFO - === Continuous Interview Scheduling Monitor Stopped ===
+2025-03-12 12:24:38,256 - INFO - === Starting Continuous Interview Scheduling Monitor ===
+2025-03-12 12:24:38,256 - INFO - Monitor will check for updates every 10 seconds
+2025-03-12 12:24:38,256 - INFO - === Starting Interview Scheduling Check ===
+2025-03-12 12:24:38,256 - INFO - Time: 2025-03-12 12:24:38
+2025-03-12 12:24:38,256 - INFO - === Fetching Current Jobs and Candidates ===
+2025-03-12 12:24:38,310 - INFO - Successfully fetched 4 jobs
+2025-03-12 12:24:38,310 - INFO - === Fetching Current Interviews ===
+2025-03-12 12:24:38,347 - INFO - Successfully fetched 0 existing interviews
+2025-03-12 12:24:38,348 - INFO - Found 0 existing interview titles
+2025-03-12 12:24:38,348 - INFO - Extracting candidate-job pairs...
+2025-03-12 12:24:38,348 - INFO - Processing job: Chief of Icecream for client: Nestle
+2025-03-12 12:24:38,396 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:24:38,397 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:24:38,446 - INFO - Found candidate ID 1 for Bob Geldof
+2025-03-12 12:24:38,446 - INFO -   Found candidate: Bob Geldof (ID: 1)
+2025-03-12 12:24:38,497 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:24:38,497 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:24:38,497 - INFO - Processing job: Head of Data for client: Facebook
+2025-03-12 12:24:38,546 - INFO - Found candidate ID 3 for Jonathan Dimbleby
+2025-03-12 12:24:38,546 - INFO -   Found candidate: Jonathan Dimbleby (ID: 3)
+2025-03-12 12:24:38,593 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:24:38,594 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:24:38,594 - INFO - Processing job: Lead Data Scientist for client: Boots
+2025-03-12 12:24:38,642 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:24:38,642 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:24:38,642 - INFO - Processing job: Software Engineer for client: NVIDIA
+2025-03-12 12:24:38,696 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:24:38,696 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:24:38,795 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:24:38,796 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:24:38,796 - INFO - Found 8 total candidate-job pairs
+2025-03-12 12:24:38,796 - INFO - === Creating Missing Interviews ===
+2025-03-12 12:24:38,796 - INFO - Creating interview for:
+2025-03-12 12:24:38,796 - INFO -   Client: Nestle
+2025-03-12 12:24:38,796 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:24:38,796 - INFO -   Candidate: Geoff Jones
+2025-03-12 12:24:38,796 - INFO -   Candidate ID: 2
+2025-03-12 12:24:38,796 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:24:38,796 - INFO -   Date Added: 2025-03-12 12:24:38
+2025-03-12 12:24:38,858 - INFO - ✓ Interview created successfully with ID: 1
+2025-03-12 12:24:38,858 - INFO - Updating portal link with actual interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Geoff%20Jones&interview_id=1
+2025-03-12 12:24:38,858 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:24:38,890 - WARNING - ✗ Failed to update portal link. Status code: 404
+2025-03-12 12:24:38,890 - WARNING - Error response: {"msg":"Cannot PUT /api/v2/tables/mpims4p3zrwsarx/records"}
+2025-03-12 12:24:38,890 - INFO - Trying alternate update method...
+2025-03-12 12:24:38,890 - INFO - Using alternate update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records?id=1
+2025-03-12 12:24:38,928 - WARNING - ✗ Failed with alternate method. Status: 422
+2025-03-12 12:24:38,928 - WARNING - Error: {"error":"REQUIRED_FIELD_MISSING","message":"Field 'Id' is required"}
+2025-03-12 12:24:40,930 - INFO - Linking interview 1 to candidate 2
+2025-03-12 12:24:40,930 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/1
+2025-03-12 12:24:40,930 - INFO - Payload: [{"Id": 2}]
+2025-03-12 12:24:41,025 - INFO - Response status code: 201
+2025-03-12 12:24:41,025 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:24:40 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:24:41,025 - INFO - Response body: true
+2025-03-12 12:24:41,025 - INFO - ✓ Successfully linked interview 1 to candidate 2
+2025-03-12 12:24:41,025 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:24:41,025 - INFO - Creating interview for:
+2025-03-12 12:24:41,025 - INFO -   Client: Nestle
+2025-03-12 12:24:41,025 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:24:41,025 - INFO -   Candidate: Bob Geldof
+2025-03-12 12:24:41,025 - INFO -   Candidate ID: 1
+2025-03-12 12:24:41,025 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:24:41,025 - INFO -   Date Added: 2025-03-12 12:24:41
+2025-03-12 12:24:41,087 - INFO - ✓ Interview created successfully with ID: 2
+2025-03-12 12:24:41,087 - INFO - Updating portal link with actual interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Bob%20Geldof&interview_id=2
+2025-03-12 12:24:41,087 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:24:41,119 - WARNING - ✗ Failed to update portal link. Status code: 404
+2025-03-12 12:24:41,119 - WARNING - Error response: {"msg":"Cannot PUT /api/v2/tables/mpims4p3zrwsarx/records"}
+2025-03-12 12:24:41,119 - INFO - Trying alternate update method...
+2025-03-12 12:24:41,119 - INFO - Using alternate update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records?id=2
+2025-03-12 12:24:41,159 - WARNING - ✗ Failed with alternate method. Status: 422
+2025-03-12 12:24:41,159 - WARNING - Error: {"error":"REQUIRED_FIELD_MISSING","message":"Field 'Id' is required"}
+2025-03-12 12:24:42,456 - INFO - Monitor stopped by user
+2025-03-12 12:24:42,457 - INFO - === Continuous Interview Scheduling Monitor Stopped ===
+2025-03-12 12:29:26,459 - INFO - === Starting Continuous Interview Scheduling Monitor ===
+2025-03-12 12:29:26,459 - INFO - Monitor will check for updates every 10 seconds
+2025-03-12 12:29:26,459 - INFO - === Starting Interview Scheduling Check ===
+2025-03-12 12:29:26,459 - INFO - Time: 2025-03-12 12:29:26
+2025-03-12 12:29:26,459 - INFO - === Fetching Current Jobs and Candidates ===
+2025-03-12 12:29:26,520 - INFO - Successfully fetched 4 jobs
+2025-03-12 12:29:26,520 - INFO - === Fetching Current Interviews ===
+2025-03-12 12:29:26,560 - INFO - Successfully fetched 0 existing interviews
+2025-03-12 12:29:26,560 - INFO - Found 0 existing interview titles
+2025-03-12 12:29:26,560 - INFO - Extracting candidate-job pairs...
+2025-03-12 12:29:26,560 - INFO - Processing job: Chief of Icecream for client: Nestle
+2025-03-12 12:29:26,613 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:29:26,613 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:29:26,669 - INFO - Found candidate ID 1 for Bob Geldof
+2025-03-12 12:29:26,669 - INFO -   Found candidate: Bob Geldof (ID: 1)
+2025-03-12 12:29:26,725 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:29:26,725 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:29:26,725 - INFO - Processing job: Head of Data for client: Facebook
+2025-03-12 12:29:26,782 - INFO - Found candidate ID 3 for Jonathan Dimbleby
+2025-03-12 12:29:26,782 - INFO -   Found candidate: Jonathan Dimbleby (ID: 3)
+2025-03-12 12:29:26,843 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:29:26,844 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:29:26,844 - INFO - Processing job: Lead Data Scientist for client: Boots
+2025-03-12 12:29:26,894 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:29:26,895 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:29:26,895 - INFO - Processing job: Software Engineer for client: NVIDIA
+2025-03-12 12:29:27,000 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:29:27,000 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:29:27,051 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:29:27,051 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:29:27,051 - INFO - Found 8 total candidate-job pairs
+2025-03-12 12:29:27,051 - INFO - === Creating Missing Interviews ===
+2025-03-12 12:29:27,051 - INFO - Creating interview for:
+2025-03-12 12:29:27,051 - INFO -   Client: Nestle
+2025-03-12 12:29:27,051 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:29:27,051 - INFO -   Candidate: Geoff Jones
+2025-03-12 12:29:27,051 - INFO -   Candidate ID: 2
+2025-03-12 12:29:27,051 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:27,051 - INFO -   Date Added: 2025-03-12 12:29:27
+2025-03-12 12:29:27,115 - INFO - ✓ Interview created successfully with ID: 1
+2025-03-12 12:29:27,115 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Geoff%20Jones&interview_id=1
+2025-03-12 12:29:27,115 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:27,115 - INFO - Update payload: {"Id": 1, "Interview Portal Link": "http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Geoff%20Jones&interview_id=1"}
+2025-03-12 12:29:27,180 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:29,182 - INFO - Linking interview 1 to candidate 2
+2025-03-12 12:29:29,182 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/1
+2025-03-12 12:29:29,182 - INFO - Payload: [{"Id": 2}]
+2025-03-12 12:29:29,291 - INFO - Response status code: 201
+2025-03-12 12:29:29,291 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:29 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:29,291 - INFO - Response body: true
+2025-03-12 12:29:29,291 - INFO - ✓ Successfully linked interview 1 to candidate 2
+2025-03-12 12:29:29,291 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:29,291 - INFO - Creating interview for:
+2025-03-12 12:29:29,291 - INFO -   Client: Nestle
+2025-03-12 12:29:29,292 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:29:29,292 - INFO -   Candidate: Bob Geldof
+2025-03-12 12:29:29,292 - INFO -   Candidate ID: 1
+2025-03-12 12:29:29,292 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:29,292 - INFO -   Date Added: 2025-03-12 12:29:29
+2025-03-12 12:29:29,353 - INFO - ✓ Interview created successfully with ID: 2
+2025-03-12 12:29:29,354 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Bob%20Geldof&interview_id=2
+2025-03-12 12:29:29,354 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:29,354 - INFO - Update payload: {"Id": 2, "Interview Portal Link": "http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Bob%20Geldof&interview_id=2"}
+2025-03-12 12:29:29,416 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:31,418 - INFO - Linking interview 2 to candidate 1
+2025-03-12 12:29:31,418 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/2
+2025-03-12 12:29:31,418 - INFO - Payload: [{"Id": 1}]
+2025-03-12 12:29:31,525 - INFO - Response status code: 201
+2025-03-12 12:29:31,526 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:31 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:31,526 - INFO - Response body: true
+2025-03-12 12:29:31,526 - INFO - ✓ Successfully linked interview 2 to candidate 1
+2025-03-12 12:29:31,526 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:31,526 - INFO - Creating interview for:
+2025-03-12 12:29:31,526 - INFO -   Client: Nestle
+2025-03-12 12:29:31,526 - INFO -   Job Title: Chief of Icecream
+2025-03-12 12:29:31,526 - INFO -   Candidate: Michael Cain
+2025-03-12 12:29:31,526 - INFO -   Candidate ID: 4
+2025-03-12 12:29:31,526 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:31,526 - INFO -   Date Added: 2025-03-12 12:29:31
+2025-03-12 12:29:31,591 - INFO - ✓ Interview created successfully with ID: 3
+2025-03-12 12:29:31,591 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Michael%20Cain&interview_id=3
+2025-03-12 12:29:31,592 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:31,592 - INFO - Update payload: {"Id": 3, "Interview Portal Link": "http://20.254.105.163:8501/?role=Chief%20of%20Icecream&candidate=Michael%20Cain&interview_id=3"}
+2025-03-12 12:29:31,661 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:33,663 - INFO - Linking interview 3 to candidate 4
+2025-03-12 12:29:33,663 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/3
+2025-03-12 12:29:33,664 - INFO - Payload: [{"Id": 4}]
+2025-03-12 12:29:33,753 - INFO - Response status code: 201
+2025-03-12 12:29:33,753 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:33 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:33,753 - INFO - Response body: true
+2025-03-12 12:29:33,754 - INFO - ✓ Successfully linked interview 3 to candidate 4
+2025-03-12 12:29:33,754 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:33,754 - INFO - Creating interview for:
+2025-03-12 12:29:33,754 - INFO -   Client: Facebook
+2025-03-12 12:29:33,754 - INFO -   Job Title: Head of Data
+2025-03-12 12:29:33,754 - INFO -   Candidate: Jonathan Dimbleby
+2025-03-12 12:29:33,754 - INFO -   Candidate ID: 3
+2025-03-12 12:29:33,754 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:33,754 - INFO -   Date Added: 2025-03-12 12:29:33
+2025-03-12 12:29:33,822 - INFO - ✓ Interview created successfully with ID: 4
+2025-03-12 12:29:33,823 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Head%20of%20Data&candidate=Jonathan%20Dimbleby&interview_id=4
+2025-03-12 12:29:33,823 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:33,823 - INFO - Update payload: {"Id": 4, "Interview Portal Link": "http://20.254.105.163:8501/?role=Head%20of%20Data&candidate=Jonathan%20Dimbleby&interview_id=4"}
+2025-03-12 12:29:33,887 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:35,889 - INFO - Linking interview 4 to candidate 3
+2025-03-12 12:29:35,889 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/4
+2025-03-12 12:29:35,890 - INFO - Payload: [{"Id": 3}]
+2025-03-12 12:29:35,990 - INFO - Response status code: 201
+2025-03-12 12:29:35,990 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:36 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:35,990 - INFO - Response body: true
+2025-03-12 12:29:35,990 - INFO - ✓ Successfully linked interview 4 to candidate 3
+2025-03-12 12:29:35,990 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:35,990 - INFO - Creating interview for:
+2025-03-12 12:29:35,991 - INFO -   Client: Facebook
+2025-03-12 12:29:35,991 - INFO -   Job Title: Head of Data
+2025-03-12 12:29:35,991 - INFO -   Candidate: Geoff Jones
+2025-03-12 12:29:35,991 - INFO -   Candidate ID: 2
+2025-03-12 12:29:35,991 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:35,991 - INFO -   Date Added: 2025-03-12 12:29:35
+2025-03-12 12:29:36,060 - INFO - ✓ Interview created successfully with ID: 5
+2025-03-12 12:29:36,060 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Head%20of%20Data&candidate=Geoff%20Jones&interview_id=5
+2025-03-12 12:29:36,060 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:36,060 - INFO - Update payload: {"Id": 5, "Interview Portal Link": "http://20.254.105.163:8501/?role=Head%20of%20Data&candidate=Geoff%20Jones&interview_id=5"}
+2025-03-12 12:29:36,124 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:38,126 - INFO - Linking interview 5 to candidate 2
+2025-03-12 12:29:38,127 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/5
+2025-03-12 12:29:38,127 - INFO - Payload: [{"Id": 2}]
+2025-03-12 12:29:38,206 - INFO - Response status code: 201
+2025-03-12 12:29:38,206 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:38 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:38,207 - INFO - Response body: true
+2025-03-12 12:29:38,207 - INFO - ✓ Successfully linked interview 5 to candidate 2
+2025-03-12 12:29:38,207 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:38,207 - INFO - Creating interview for:
+2025-03-12 12:29:38,207 - INFO -   Client: Boots
+2025-03-12 12:29:38,207 - INFO -   Job Title: Lead Data Scientist
+2025-03-12 12:29:38,207 - INFO -   Candidate: Michael Cain
+2025-03-12 12:29:38,207 - INFO -   Candidate ID: 4
+2025-03-12 12:29:38,207 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:38,207 - INFO -   Date Added: 2025-03-12 12:29:38
+2025-03-12 12:29:38,269 - INFO - ✓ Interview created successfully with ID: 6
+2025-03-12 12:29:38,269 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Lead%20Data%20Scientist&candidate=Michael%20Cain&interview_id=6
+2025-03-12 12:29:38,269 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:38,269 - INFO - Update payload: {"Id": 6, "Interview Portal Link": "http://20.254.105.163:8501/?role=Lead%20Data%20Scientist&candidate=Michael%20Cain&interview_id=6"}
+2025-03-12 12:29:38,337 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:40,339 - INFO - Linking interview 6 to candidate 4
+2025-03-12 12:29:40,339 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/6
+2025-03-12 12:29:40,339 - INFO - Payload: [{"Id": 4}]
+2025-03-12 12:29:40,423 - INFO - Response status code: 201
+2025-03-12 12:29:40,424 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:40 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:40,424 - INFO - Response body: true
+2025-03-12 12:29:40,424 - INFO - ✓ Successfully linked interview 6 to candidate 4
+2025-03-12 12:29:40,424 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:40,424 - INFO - Creating interview for:
+2025-03-12 12:29:40,424 - INFO -   Client: NVIDIA
+2025-03-12 12:29:40,424 - INFO -   Job Title: Software Engineer
+2025-03-12 12:29:40,424 - INFO -   Candidate: Michael Cain
+2025-03-12 12:29:40,424 - INFO -   Candidate ID: 4
+2025-03-12 12:29:40,424 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:40,424 - INFO -   Date Added: 2025-03-12 12:29:40
+2025-03-12 12:29:40,486 - INFO - ✓ Interview created successfully with ID: 7
+2025-03-12 12:29:40,486 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Software%20Engineer&candidate=Michael%20Cain&interview_id=7
+2025-03-12 12:29:40,486 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:40,486 - INFO - Update payload: {"Id": 7, "Interview Portal Link": "http://20.254.105.163:8501/?role=Software%20Engineer&candidate=Michael%20Cain&interview_id=7"}
+2025-03-12 12:29:40,552 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:42,553 - INFO - Linking interview 7 to candidate 4
+2025-03-12 12:29:42,554 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/7
+2025-03-12 12:29:42,554 - INFO - Payload: [{"Id": 4}]
+2025-03-12 12:29:42,636 - INFO - Response status code: 201
+2025-03-12 12:29:42,636 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:42 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:42,637 - INFO - Response body: true
+2025-03-12 12:29:42,637 - INFO - ✓ Successfully linked interview 7 to candidate 4
+2025-03-12 12:29:42,637 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:42,637 - INFO - Creating interview for:
+2025-03-12 12:29:42,637 - INFO -   Client: NVIDIA
+2025-03-12 12:29:42,637 - INFO -   Job Title: Software Engineer
+2025-03-12 12:29:42,637 - INFO -   Candidate: Geoff Jones
+2025-03-12 12:29:42,637 - INFO -   Candidate ID: 2
+2025-03-12 12:29:42,637 - INFO -   Scheduled Date: 2025-03-26
+2025-03-12 12:29:42,637 - INFO -   Date Added: 2025-03-12 12:29:42
+2025-03-12 12:29:42,698 - INFO - ✓ Interview created successfully with ID: 8
+2025-03-12 12:29:42,698 - INFO - Updating portal link to include interview ID: http://20.254.105.163:8501/?role=Software%20Engineer&candidate=Geoff%20Jones&interview_id=8
+2025-03-12 12:29:42,698 - INFO - Using update URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records
+2025-03-12 12:29:42,698 - INFO - Update payload: {"Id": 8, "Interview Portal Link": "http://20.254.105.163:8501/?role=Software%20Engineer&candidate=Geoff%20Jones&interview_id=8"}
+2025-03-12 12:29:42,771 - INFO - ✓ Updated interview portal link successfully
+2025-03-12 12:29:44,773 - INFO - Linking interview 8 to candidate 2
+2025-03-12 12:29:44,773 - INFO - Using link URL: http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/8
+2025-03-12 12:29:44,773 - INFO - Payload: [{"Id": 2}]
+2025-03-12 12:29:44,867 - INFO - Response status code: 201
+2025-03-12 12:29:44,867 - INFO - Response headers: {'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '4', 'ETag': 'W/"4-X/5TO4MPCKAyY0ipFgr6/IraRNs"', 'Date': 'Wed, 12 Mar 2025 12:29:45 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'}
+2025-03-12 12:29:44,867 - INFO - Response body: true
+2025-03-12 12:29:44,867 - INFO - ✓ Successfully linked interview 8 to candidate 2
+2025-03-12 12:29:44,867 - INFO - ✓ Interview linked to candidate successfully
+2025-03-12 12:29:44,867 - INFO - === Summary ===
+2025-03-12 12:29:44,867 - INFO - Total candidate-job pairs processed: 8
+2025-03-12 12:29:44,867 - INFO - Interviews created: 8
+2025-03-12 12:29:44,867 - INFO - Interviews skipped (already exist): 0
+2025-03-12 12:29:44,867 - INFO - Check completed!
+2025-03-12 12:29:44,868 - INFO - Created 8 new interviews in this check
+2025-03-12 12:29:44,868 - INFO - Next check scheduled for: 2025-03-12 12:29:54
+2025-03-12 12:29:44,868 - INFO - Waiting for next check cycle...
+2025-03-12 12:29:54,877 - INFO - === Starting Interview Scheduling Check ===
+2025-03-12 12:29:54,878 - INFO - Time: 2025-03-12 12:29:54
+2025-03-12 12:29:54,878 - INFO - === Fetching Current Jobs and Candidates ===
+2025-03-12 12:29:54,928 - INFO - Successfully fetched 4 jobs
+2025-03-12 12:29:54,928 - INFO - === Fetching Current Interviews ===
+2025-03-12 12:29:54,968 - INFO - Successfully fetched 8 existing interviews
+2025-03-12 12:29:54,968 - INFO - Found 8 existing interview titles
+2025-03-12 12:29:54,968 - INFO - Extracting candidate-job pairs...
+2025-03-12 12:29:54,968 - INFO - Processing job: Chief of Icecream for client: Nestle
+2025-03-12 12:29:55,023 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:29:55,023 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:29:55,073 - INFO - Found candidate ID 1 for Bob Geldof
+2025-03-12 12:29:55,073 - INFO -   Found candidate: Bob Geldof (ID: 1)
+2025-03-12 12:29:55,154 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:29:55,154 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:29:55,154 - INFO - Processing job: Head of Data for client: Facebook
+2025-03-12 12:29:55,217 - INFO - Found candidate ID 3 for Jonathan Dimbleby
+2025-03-12 12:29:55,217 - INFO -   Found candidate: Jonathan Dimbleby (ID: 3)
+2025-03-12 12:29:55,270 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:29:55,271 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:29:55,271 - INFO - Processing job: Lead Data Scientist for client: Boots
+2025-03-12 12:29:55,318 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:29:55,318 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:29:55,318 - INFO - Processing job: Software Engineer for client: NVIDIA
+2025-03-12 12:29:55,370 - INFO - Found candidate ID 4 for Michael Cain
+2025-03-12 12:29:55,370 - INFO -   Found candidate: Michael Cain (ID: 4)
+2025-03-12 12:29:55,417 - INFO - Found candidate ID 2 for Geoff Jones
+2025-03-12 12:29:55,417 - INFO -   Found candidate: Geoff Jones (ID: 2)
+2025-03-12 12:29:55,417 - INFO - Found 8 total candidate-job pairs
+2025-03-12 12:29:55,417 - INFO - === Creating Missing Interviews ===
+2025-03-12 12:29:55,417 - INFO - Skipping existing interview: Nestle - Chief of Icecream: Geoff Jones
+2025-03-12 12:29:55,417 - INFO - Skipping existing interview: Nestle - Chief of Icecream: Bob Geldof
+2025-03-12 12:29:55,417 - INFO - Skipping existing interview: Nestle - Chief of Icecream: Michael Cain
+2025-03-12 12:29:55,417 - INFO - Skipping existing interview: Facebook - Head of Data: Jonathan Dimbleby
+2025-03-12 12:29:55,417 - INFO - Skipping existing interview: Facebook - Head of Data: Geoff Jones
+2025-03-12 12:29:55,417 - INFO - Skipping existing interview: Boots - Lead Data Scientist: Michael Cain
+2025-03-12 12:29:55,418 - INFO - Skipping existing interview: NVIDIA - Software Engineer: Michael Cain
+2025-03-12 12:29:55,418 - INFO - Skipping existing interview: NVIDIA - Software Engineer: Geoff Jones
+2025-03-12 12:29:55,418 - INFO - === Summary ===
+2025-03-12 12:29:55,418 - INFO - Total candidate-job pairs processed: 8
+2025-03-12 12:29:55,418 - INFO - Interviews created: 0
+2025-03-12 12:29:55,418 - INFO - Interviews skipped (already exist): 8
+2025-03-12 12:29:55,418 - INFO - Check completed!
+2025-03-12 12:29:55,418 - INFO - No new interviews created in this check
+2025-03-12 12:29:55,418 - INFO - Next check scheduled for: 2025-03-12 12:30:05
+2025-03-12 12:29:55,418 - INFO - Waiting for next check cycle...
+2025-03-12 12:29:57,575 - INFO - Monitor stopped by user
+2025-03-12 12:29:57,575 - INFO - === Continuous Interview Scheduling Monitor Stopped ===
