@@ -42,6 +42,70 @@ portal_base_url = "http://20.254.105.163:8501/"
 # c4gkn9aehmsg1n5 = Link field ID for connecting to candidates
 link_api_url = "http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/links/c4gkn9aehmsg1n5/records/{recordId}"
 
+# Define interview questions
+ALL_QUESTIONS = [
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation in the past?",
+    "What strategies have you used to increase social media engagement and follower growth, and how do you set and measure KPIs for these efforts?",
+    "Could you share examples of digital-first content you've designed that resonated with a target audience, and do you have experience creating video content?",
+    "How do you approach reporting and analytics for social media campaigns, and can you provide an example of how you've used data to improve content performance?",
+    "Describe a time when you collaborated with a team to deliver a successful marketing campaign. What was your role, and what was the outcome?",
+    "What excites you about the opportunity to work in a growing, innovative law firm like Bexley Beaumont, and how do you see yourself contributing to our team culture?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation?",
+    "What design tools and software are you most proficient in, and can you provide examples of digital-first content you've created that resonated with a target audience?",
+    "How do you approach setting and measuring KPIs for social media growth, and can you share any specific metrics or results you've achieved in past roles?",
+    "Have you been involved in reporting and analytics for social media content? If so, how do you balance data analysis with creative content development?",
+    "Can you share an example of a successful social media strategy you developed and implemented, and what role you played in its execution?",
+    "How do you build and maintain effective relationships within a team, and can you provide an example of how you've contributed to a collaborative team culture?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation?",
+    "What design tools and techniques do you use to create engaging digital content, and do you have experience with video content creation?",
+    "How do you approach setting and measuring KPIs for social media growth, and can you provide examples of successful campaigns you've managed?",
+    "Can you share your experience with reporting and analytics in social media marketing, and how you balance data analysis with creative content development?",
+    "How do you build and maintain effective relationships within a team, and can you provide an example of a successful collaborative project?",
+    "What excites you about joining a growing and innovative law firm like Bexley Beaumont, and how do you see yourself contributing to its success?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation?",
+    "What design tools have you used to create digital-first content, and do you have experience with video content creation?",
+    "How do you approach setting and tracking KPIs for social media growth, and can you provide an example of a successful campaign you've managed?",
+    "Can you share your experience in building and maintaining professional relationships within a team-oriented environment?",
+    "How have you utilized reporting and analytics to measure the success of your social media strategies, and what metrics do you prioritize?",
+    "What motivates you to work in a collaborative and innovative environment like Bexley Beaumont, and how do you see yourself contributing to the firm's growth and culture?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation?",
+    "What digital marketing channels have you worked across, and which ones do you feel most confident in managing?",
+    "Have you been involved in setting KPIs for social media growth, and can you provide examples of how you've tracked and reported on these metrics?",
+    "How do you approach building and maintaining professional relationships within a team to support a collaborative work environment?",
+    "Can you share an example of a successful digital marketing campaign you managed, including the strategies you used and the results achieved?",
+    "What excites you about the opportunity to work in a growing, innovative law firm like Bexley Beaumont, and how do you see yourself contributing to its success?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you focus on lead generation?",
+    "What design tools do you use to create digital-first content, and can you provide examples of video content you have created?",
+    "How do you approach setting and measuring KPIs for social media growth, and what metrics do you typically report on?",
+    "Can you share your experience in managing CRM and email marketing campaigns, and how you ensure effective communication and database management?",
+    "How do you build and maintain strong professional relationships within a team, and can you provide an example of a successful collaboration?",
+    "What excites you about joining a growing and innovative law firm like Bexley Beaumont, and how do you see yourself contributing to its team culture and success?",
+    "Can you describe your experience with content creation for social media, particularly focusing on LinkedIn and lead generation?",
+    "What strategies have you used to achieve a 30 percent increase in organic LinkedIn followers and engagement, and how would you apply these strategies to our firm's accounts?",
+    "How do you balance creativity and data analysis when reporting on content performance and setting KPIs for growth?",
+    "Can you provide examples of how you've used your design skills to create 'digital first' content that resonates with a target audience?",
+    "How have you built and maintained effective relationships within a team to support collaborative marketing efforts?",
+    "What excites you about joining a growing, innovative law firm like Bexley Beaumont, and how do you see yourself contributing to our team culture and success?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation?",
+    "What design tools and techniques do you use to create digital-first content, and do you have experience with video content creation?",
+    "How do you approach reporting and analytics for social media campaigns, and what metrics do you prioritize to track progress?",
+    "Can you share an example of a successful event you managed and how you collaborated with different teams to achieve the desired outcome?",
+    "How do you stay updated with emerging marketing trends and tools, and how have you applied this knowledge in your previous roles?",
+    "What strategies have you used to build and nurture strategic partnerships, and how do you ensure these relationships align with brand goals?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you focus on lead generation?",
+    "What design tools have you used to create digital-first content, and do you have experience with video content creation?",
+    "How do you approach setting and measuring KPIs for social media growth, such as follower growth and engagement metrics?",
+    "Can you provide examples of successful marketing strategies you've developed and executed that increased conversions and brand awareness?",
+    "How do you balance reporting and analytics with creativity in your marketing campaigns, and what metrics do you typically report on?",
+    "What excites you about joining a collaborative and innovative team in a growing law firm, and how do you see yourself contributing to our team culture?",
+    "Can you describe your experience with content creation for social media, particularly on LinkedIn, and how you've focused on lead generation?",
+    "What digital marketing platforms have you worked with, and how have you used them to enhance audience engagement and brand presence?",
+    "How do you approach setting and achieving KPIs for social media growth, and can you provide examples of past successes?",
+    "Can you share your experience in designing digital-first content, including video content, and how it resonated with your target audience?",
+    "How have you used analytics and reporting to track progress and make data-driven decisions in your marketing campaigns?",
+    "Describe a time when you collaborated with a team to drive efficiency and business improvement. What was your role, and what was the outcome?"
+]
+
 def get_interview_title(client, job_title, first_name, last_name):
     client_prefix = f"{client} - " if client else ""
     title = f"{client_prefix}{job_title}: {first_name} {last_name}".strip()
@@ -208,9 +272,9 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
         "Title": get_interview_title(client, job_title, first_name, last_name),
         "Interview Portal Link": initial_portal_link,
         "Interview Due Date": interview_date,
-        "Interview Status": "Not Started",
+        "Interview Status": "Ready for Interview",  # Updated to "Ready for Interview"
         "Interview Rank": 0,
-        "Text": "",
+        "Questions": INTERVIEW_QUESTIONS,  # Added the interview questions
         "Date Added": current_datetime
     }
     
@@ -276,6 +340,49 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
     except Exception as e:
         logging.error(f"Error creating interview: {str(e)}")
         return False
+
+def update_existing_interviews():
+    """Updates all existing interviews to set status to Ready for Interview and add questions."""
+    logging.info("=== Updating Existing Interviews ===")
+    
+    try:
+        # Fetch existing interviews
+        interviews_response = requests.get(interview_url, headers=headers, params=params)
+        
+        if interviews_response.status_code != 200:
+            logging.error(f"Failed to fetch interviews. Status code: {interviews_response.status_code}")
+            return 0
+            
+        interviews_data = interviews_response.json()
+        existing_interviews = interviews_data.get('list', [])
+        logging.info(f"Found {len(existing_interviews)} existing interviews to update")
+        
+        updated_count = 0
+        for interview in existing_interviews:
+            interview_id = interview.get('Id')
+            if interview_id is not None:
+                update_payload = {
+                    "Id": interview_id,
+                    "Text": INTERVIEW_QUESTIONS,
+                    "Interview Status": "Ready for Interview"
+                }
+                
+                logging.info(f"Updating interview ID {interview_id}")
+                logging.info(f"Update payload: {json.dumps(update_payload)}")
+                
+                update_response = requests.patch(interview_url, headers=headers, json=update_payload)
+                if update_response.status_code >= 200 and update_response.status_code < 300:
+                    logging.info(f"✓ Successfully updated interview {interview_id}")
+                    updated_count += 1
+                else:
+                    logging.error(f"✗ Failed to update interview {interview_id}. Status code: {update_response.status_code}")
+                    logging.error(f"Error response: {update_response.text}")
+        
+        logging.info(f"=== Updated {updated_count} existing interviews ===")
+        return updated_count
+    except Exception as e:
+        logging.error(f"Error updating existing interviews: {str(e)}")
+        return 0
 
 def check_and_create_interviews():
     logging.info("=== Starting Interview Scheduling Check ===")
@@ -347,6 +454,10 @@ def check_and_create_interviews():
 def main():
     logging.info("=== Starting Continuous Interview Scheduling Monitor ===")
     
+    # Update existing interviews with the questions and status
+    updated_count = update_existing_interviews()
+    logging.info(f"Updated {updated_count} existing interviews with questions and status")
+    
     # Configuration
     check_interval_seconds = 10  # Check every 10 seconds
     
@@ -376,4 +487,6 @@ def main():
         logging.info("=== Continuous Interview Scheduling Monitor Stopped ===")
 
 if __name__ == "__main__":
+    # Call update_existing_interviews once when script is run
+    update_existing_interviews()
     main()
