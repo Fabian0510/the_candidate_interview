@@ -20,11 +20,11 @@ INTERVIEW_URL = f"{BASE_API_URL}/tables/{INTERVIEW_TABLE}/records"
 # Handle token configuration with fallback
 try:
     # Try to get token from Streamlit secrets
-    API_TOKEN = st.secrets.get("API_TOKEN")
-except Exception:
-    # Fallback to environment variable or hardcoded token for development
     import os
     API_TOKEN = os.environ.get("API_TOKEN", "EgEls5yPpzOqhGdtL1CDcZkNolXhQhIFfwd4DIe0")  # Default token from example
+except Exception:
+    # Fallback to environment variable or hardcoded token for development
+    
 
 HEADERS = {
     'accept': 'application/json',
@@ -194,7 +194,7 @@ def ask_next_question():
 if "greeted" not in st.session_state:
     st.session_state.greeted = True
     with st.chat_message("assistant"):
-        greeting = f"We'll be asking some questions to establish your suitability for the role of {role_name}, for X (Formerly known as Twitter). Let's get started."
+        greeting = f"We'll be asking some questions to establish your suitability for the role of {role_name}. Let's get started."
         st.write_stream(response_generator(greeting))
     st.session_state.messages.append({"role": "assistant", "content": greeting})
     ask_next_question()
