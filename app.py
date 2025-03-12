@@ -69,70 +69,38 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Function to submit interview data to API
-def submit_interview_data():
+# Function to update interview status and rank
+def update_interview_status():
     try:
-        # Format the final data for API submission
-        interview_json = json.dumps(st.session_state.interview_data, indent=2)
-        
-        # Log what we're sending (for debugging)
-        st.sidebar.write("Sending data to API:")
-        st.sidebar.code(interview_json)
+        # Log what we're doing
+        st.sidebar.write("Updating interview status to Complete...")
         
         # Generate a random interview rank between 1 and 5
         interview_rank = random.randint(1, 5)
         
-        # Prepare the payload according to the API requirements
-        payload = {
-            "Title": f"Interview: {candidate_name} for {role_name}",
-            "Interview Portal Link": "",
-            "Interview Due Date": datetime.now().strftime("%Y-%m-%d"),
-            "Interview Status": "In Progress",  # Make sure this matches the exact field name in the API
-            "Interview Rank": interview_rank,
-            "Text": interview_json,
-            "Date Added": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Interview ID": interview_id
+        # Prepare the update payload
+        update_payload = {
+            "Id": interview_id,  # Use the interview_id from URL parameters
+            "Interview Status": "Complete",
+            "Interview Rank": interview_rank
         }
         
-        # Send the initial POST API request
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
+        st.sidebar.write("Sending PATCH request:")
+        st.sidebar.code(json.dumps(update_payload, indent=2))
         
-        if response.status_code == 200:
-            st.sidebar.success("✓ Interview data successfully submitted to API")
-            
-            # Get the record ID from the response
-            response_data = response.json()
-            record_id = response_data.get('id')
-            
-            if record_id:
-                # Now update the status to Complete with a PATCH request - don't include Text field
-                update_payload = {
-                    "Id": record_id,
-                    "Interview Status": "Complete",  # Confirmed correct status value
-                    "Interview Rank": interview_rank
-                }
-                
-                st.sidebar.write("Sending PATCH request to update status:")
-                st.sidebar.code(json.dumps(update_payload, indent=2))
-                
-                patch_response = requests.patch(API_URL, headers=HEADERS, json=update_payload)
-                
-                if patch_response.status_code == 200:
-                    st.sidebar.success(f"✓ Interview status updated to Complete with rank {interview_rank}")
-                else:
-                    st.sidebar.error(f"✗ Failed to update status. Status code: {patch_response.status_code}")
-                    st.sidebar.error(f"Error response: {patch_response.text}")
-            else:
-                st.sidebar.warning("Could not find record ID in response, status not updated")
-                
+        # Send the PATCH request
+        patch_response = requests.patch(API_URL, headers=HEADERS, json=update_payload)
+        
+        if patch_response.status_code == 200:
+            st.sidebar.success(f"✓ Interview status updated to Complete with rank {interview_rank}")
             return True
         else:
-            st.sidebar.error(f"✗ Failed to submit data. Status code: {response.status_code}")
-            st.sidebar.error(f"Error response: {response.text}")
+            st.sidebar.error(f"✗ Failed to update status. Status code: {patch_response.status_code}")
+            st.sidebar.error(f"Error response: {patch_response.text}")
             return False
             
     except Exception as e:
-        st.sidebar.error(f"Error submitting interview data: {str(e)}")
+        st.sidebar.error(f"Error updating interview status: {str(e)}")
         return False
 
 # Function to ask the next question
@@ -160,9 +128,9 @@ def ask_next_question():
         # Add final message to chat history
         st.session_state.messages.append({"role": "assistant", "content": final_message})
         
-        # Submit the interview data to the API
+        # Update the interview status
         st.session_state.interview_complete = True
-        submit_interview_data()
+        update_interview_status()
 
 # Start conversation with a greeting
 if "greeted" not in st.session_state:
