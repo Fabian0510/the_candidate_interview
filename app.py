@@ -87,7 +87,7 @@ def submit_interview_data():
             "Title": f"Interview: {candidate_name} for {role_name}",
             "Interview Portal Link": "",
             "Interview Due Date": datetime.now().strftime("%Y-%m-%d"),
-            "Interview Status": "In Progress",  # Start with In Progress
+            "Interview Status": "In Progress",  # Make sure this matches the exact field name in the API
             "Interview Rank": interview_rank,
             "Text": interview_json,
             "Date Added": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -105,10 +105,10 @@ def submit_interview_data():
             record_id = response_data.get('id')
             
             if record_id:
-                # Now update the status to Complete with a PATCH request
+                # Now update the status to Complete with a PATCH request - don't include Text field
                 update_payload = {
                     "Id": record_id,
-                    "Interview Status": "Complete",
+                    "Interview Status": "Complete",  # Confirmed correct status value
                     "Interview Rank": interview_rank
                 }
                 
