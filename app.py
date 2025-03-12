@@ -22,8 +22,9 @@ try:
     # Try to get token from Streamlit secrets
     import os
     API_TOKEN = os.environ.get("API_TOKEN", "EgEls5yPpzOqhGdtL1CDcZkNolXhQhIFfwd4DIe0")  # Default token from example
-except Exception:
+except Exception as e:
     # Fallback to environment variable or hardcoded token for development
+    print(f"Error accessing environment variables: {e}")
     
 
 HEADERS = {
