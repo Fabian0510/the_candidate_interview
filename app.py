@@ -3,8 +3,12 @@ import random
 import time
 import json
 import requests
+import os
 from datetime import datetime
 import re
+
+# Import the file saving function
+from interview_file_save import save_interview_responses
 
 # Streamed response emulator
 def response_generator(response_text):
@@ -96,6 +100,17 @@ def get_default_questions():
         "What excites you about joining a collaborative and innovative team in a growing law firm, and how do you see yourself contributing to our team culture?",
     ]
 
+# Function to save responses after each answer and when interview completes
+def save_responses():
+    if "interview_data" in st.session_state:
+        try:
+            file_path = save_interview_responses(st.session_state.interview_data)
+            st.sidebar.success(f"✓ Responses saved to: {file_path}")
+            return file_path
+        except Exception as e:
+            st.sidebar.error(f"Failed to save responses: {str(e)}")
+            return None
+
 # Get URL parameters
 role_name = st.query_params.get("role", "Unknown Role")
 candidate_name = st.query_params.get("candidate", "Unknown User")
@@ -152,6 +167,12 @@ def update_interview_status():
         
         if patch_response.status_code == 200:
             st.sidebar.success(f"✓ Interview status updated to Complete with rank {interview_rank}")
+            
+            # Save responses to file when interview completes
+            file_path = save_responses()
+            if file_path:
+                st.session_state.interview_data["final_file_path"] = file_path
+            
             return True
         else:
             st.sidebar.error(f"✗ Failed to update status. Status code: {patch_response.status_code}")
@@ -187,7 +208,7 @@ def ask_next_question():
         # Add final message to chat history
         st.session_state.messages.append({"role": "assistant", "content": final_message})
         
-        # Update the interview status
+        # Update the interview status and save final responses
         st.session_state.interview_complete = True
         update_interview_status()
 
@@ -219,6 +240,9 @@ if prompt := st.chat_input("Your response here..."):
             "answer": prompt,
             "question_number": st.session_state.question_index
         })
+        
+        # Save responses after each answer
+        save_responses()
 
     # Ask the next question
     ask_next_question()
@@ -230,6 +254,12 @@ st.sidebar.write(f"Current candidate: {candidate_name}")
 st.sidebar.write(f"Interview ID: {interview_id}")
 st.sidebar.write(f"Question index: {st.session_state.question_index}/{len(st.session_state.interview_questions)}")
 st.sidebar.write(f"API Token: {API_TOKEN[:5]}..." if API_TOKEN else "No API token found")
+
+# Button to manually save responses
+if st.sidebar.button("Save Responses to File"):
+    file_path = save_responses()
+    if file_path:
+        st.sidebar.success(f"Responses manually saved to: {file_path}")
 
 # Display current interview data
 if st.sidebar.checkbox("Show interview data"):
