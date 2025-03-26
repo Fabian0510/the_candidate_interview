@@ -8,13 +8,23 @@ from datetime import datetime
 import re
 from azure.storage.blob import BlobServiceClient
 
-# Azure Blob Storage Configuration
-AZURE_STORAGE_ACCOUNT_NAME = "stcandidatedev"  # Replace with your storage account name
-AZURE_STORAGE_ACCOUNT_KEY = "7j9fQrp2GBUlBJJjEFu1LrKNIaVKD73MTRin+hRsP1R8tdiasOkg7H3if5bJQfHNwdkw2NoBjdez+ASt9IbpRw=="    # Replace with your storage account key
-AZURE_CONTAINER_NAME = "landing"
-AZURE_STORAGE_CONNECTION_STRING = None  # Set to None since we're using account name and key
+try:
+    # Get the Azure Storage settings from secrets.toml
+    AZURE_STORAGE_ACCOUNT_NAME = st.secrets["azure"]["storage_account_name"]
+    AZURE_STORAGE_ACCOUNT_KEY = st.secrets["azure"]["storage_account_key"]
+    AZURE_CONTAINER_NAME = st.secrets.get("azure", {}).get("container_name", "landing")
+    
+    # Log the configuration (without exposing the full key)
+    st.sidebar.write(f"Azure Storage Account: {AZURE_STORAGE_ACCOUNT_NAME}")
+    st.sidebar.write(f"Azure Container: {AZURE_CONTAINER_NAME}")
+    st.sidebar.write(f"Azure Key: {AZURE_STORAGE_ACCOUNT_KEY[:5]}..." if AZURE_STORAGE_ACCOUNT_KEY else "No key found")
+except Exception as e:
+    st.sidebar.error(f"Error loading Azure Storage configuration: {str(e)}")
+    # Set defaults if secrets are not available
+    AZURE_STORAGE_ACCOUNT_NAME = None
+    AZURE_STORAGE_ACCOUNT_KEY = None
+    AZURE_CONTAINER_NAME = "landing"
 
-# Function to save interview responses to Azure Blob Storage
 # Function to save interview responses to Azure Blob Storage
 def save_to_blob_storage(interview_data):
     try:
@@ -38,8 +48,11 @@ def save_to_blob_storage(interview_data):
             content += f"Answer: {response['answer']}\n\n"
             content += "-" * 80 + "\n\n"
         
-        # Connect to blob storage using hard-coded credentials
-        # This approach directly creates the connection using account name and key
+        # Check if Azure Storage credentials are available
+        if not AZURE_STORAGE_ACCOUNT_NAME or not AZURE_STORAGE_ACCOUNT_KEY:
+            raise Exception("Azure Storage credentials not available. Check your secrets.toml file.")
+            
+        # Connect to blob storage using credentials from secrets.toml
         account_url = f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
         blob_service_client = BlobServiceClient(account_url=account_url, credential=AZURE_STORAGE_ACCOUNT_KEY)
         
@@ -54,7 +67,7 @@ def save_to_blob_storage(interview_data):
     except Exception as e:
         st.error(f"Error saving to blob storage: {str(e)}")
         return None
-    
+        
 # Function to save interview responses to a text file
 def save_interview_responses(interview_data):
     try:
