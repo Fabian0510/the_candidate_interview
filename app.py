@@ -170,11 +170,19 @@ def update_interview_status():
         # Generate a random interview rank between 1 and 5
         interview_rank = random.randint(1, 5)
         
+        # Compile all answers into a single text document
+        all_answers = ""
+        for i, response in enumerate(st.session_state.interview_data['responses'], 1):
+            all_answers += f"Q{i}: {response['question']}\n\n"
+            all_answers += f"A{i}: {response['answer']}\n\n"
+            all_answers += "-" * 40 + "\n\n"
+        
         # Prepare the update payload
         update_payload = {
             "Id": interview_id,  # Use the interview_id from URL parameters
             "Interview Status": "Complete",
-            "Interview Rank": interview_rank
+            "Interview Rank": interview_rank,
+            "Answers": all_answers  # Add all answers to the Answers field
         }
         
         st.sidebar.write("Sending PATCH request:")
@@ -185,6 +193,7 @@ def update_interview_status():
         
         if patch_response.status_code == 200:
             st.sidebar.success(f"✓ Interview status updated to Complete with rank {interview_rank}")
+            st.sidebar.success(f"✓ Interview answers submitted to API")
             
             # Save all responses to a text file when interview completes
             file_path = save_interview_responses(st.session_state.interview_data)
@@ -201,7 +210,7 @@ def update_interview_status():
     except Exception as e:
         st.sidebar.error(f"Error updating interview status: {str(e)}")
         return False
-
+    
 # Function to ask the next question
 def ask_next_question():
     if st.session_state.question_index < len(st.session_state.interview_questions):
