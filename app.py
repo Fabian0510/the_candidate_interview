@@ -7,8 +7,32 @@ import os
 from datetime import datetime
 import re
 
-# Import the file saving function
-from interview_file_save import save_interview_responses
+# Function to save interview responses to a text file
+def save_interview_responses(interview_data):
+    try:
+        # Create a directory for saving responses if it doesn't exist
+        os.makedirs("interview_responses", exist_ok=True)
+        
+        # Create a filename based on candidate name, role, and date
+        filename = f"interview_responses/{interview_data['candidate_name']}_{interview_data['role_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        
+        # Write responses to the text file
+        with open(filename, "w") as file:
+            # Write header information
+            file.write(f"Interview with {interview_data['candidate_name']} for {interview_data['role_name']}\n")
+            file.write(f"Date: {interview_data['interview_date']}\n")
+            file.write(f"Interview ID: {interview_data['interview_id']}\n\n")
+            
+            # Write each question and answer
+            for i, response in enumerate(interview_data['responses'], 1):
+                file.write(f"Question {i}: {response['question']}\n\n")
+                file.write(f"Answer: {response['answer']}\n\n")
+                file.write("-" * 80 + "\n\n")
+        
+        return filename
+    except Exception as e:
+        st.error(f"Error saving responses: {str(e)}")
+        return None
 
 # Streamed response emulator
 def response_generator(response_text):
@@ -100,17 +124,6 @@ def get_default_questions():
         "What excites you about joining a collaborative and innovative team in a growing law firm, and how do you see yourself contributing to our team culture?",
     ]
 
-# Function to save responses after each answer and when interview completes
-def save_responses():
-    if "interview_data" in st.session_state:
-        try:
-            file_path = save_interview_responses(st.session_state.interview_data)
-            st.sidebar.success(f"✓ Responses saved to: {file_path}")
-            return file_path
-        except Exception as e:
-            st.sidebar.error(f"Failed to save responses: {str(e)}")
-            return None
-
 # Get URL parameters
 role_name = st.query_params.get("role", "Unknown Role")
 candidate_name = st.query_params.get("candidate", "Unknown User")
@@ -168,9 +181,10 @@ def update_interview_status():
         if patch_response.status_code == 200:
             st.sidebar.success(f"✓ Interview status updated to Complete with rank {interview_rank}")
             
-            # Save responses to file when interview completes
-            file_path = save_responses()
+            # Save all responses to a text file when interview completes
+            file_path = save_interview_responses(st.session_state.interview_data)
             if file_path:
+                st.sidebar.success(f"✓ All responses saved to: {file_path}")
                 st.session_state.interview_data["final_file_path"] = file_path
             
             return True
@@ -240,9 +254,6 @@ if prompt := st.chat_input("Your response here..."):
             "answer": prompt,
             "question_number": st.session_state.question_index
         })
-        
-        # Save responses after each answer
-        save_responses()
 
     # Ask the next question
     ask_next_question()
@@ -257,7 +268,7 @@ st.sidebar.write(f"API Token: {API_TOKEN[:5]}..." if API_TOKEN else "No API toke
 
 # Button to manually save responses
 if st.sidebar.button("Save Responses to File"):
-    file_path = save_responses()
+    file_path = save_interview_responses(st.session_state.interview_data)
     if file_path:
         st.sidebar.success(f"Responses manually saved to: {file_path}")
 
