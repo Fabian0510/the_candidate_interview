@@ -6,7 +6,55 @@ import requests
 import os
 from datetime import datetime
 import re
+from azure.storage.blob import BlobServiceClient
 
+# Azure Blob Storage Configuration
+AZURE_STORAGE_ACCOUNT_NAME = "stcandidatedev"  # Replace with your storage account name
+AZURE_STORAGE_ACCOUNT_KEY = "7j9fQrp2GBUlBJJjEFu1LrKNIaVKD73MTRin+hRsP1R8tdiasOkg7H3if5bJQfHNwdkw2NoBjdez+ASt9IbpRw=="    # Replace with your storage account key
+AZURE_CONTAINER_NAME = "landing"
+AZURE_STORAGE_CONNECTION_STRING = None  # Set to None since we're using account name and key
+
+# Function to save interview responses to Azure Blob Storage
+# Function to save interview responses to Azure Blob Storage
+def save_to_blob_storage(interview_data):
+    try:
+        # Create a filename based on candidate name, role, and date
+        sanitized_candidate_name = interview_data['candidate_name'].replace(' ', '_')
+        sanitized_role_name = interview_data['role_name'].replace(' ', '_')
+        
+        # Create filename with no spaces
+        blob_filename = f"answers/{sanitized_candidate_name}_{sanitized_role_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        
+        # Generate the content to be saved
+        content = ""
+        # Write header information
+        content += f"Interview with {interview_data['candidate_name']} for {interview_data['role_name']}\n"
+        content += f"Date: {interview_data['interview_date']}\n"
+        content += f"Interview ID: {interview_data['interview_id']}\n\n"
+        
+        # Write each question and answer
+        for i, response in enumerate(interview_data['responses'], 1):
+            content += f"Question {i}: {response['question']}\n\n"
+            content += f"Answer: {response['answer']}\n\n"
+            content += "-" * 80 + "\n\n"
+        
+        # Connect to blob storage using hard-coded credentials
+        # This approach directly creates the connection using account name and key
+        account_url = f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
+        blob_service_client = BlobServiceClient(account_url=account_url, credential=AZURE_STORAGE_ACCOUNT_KEY)
+        
+        # Get container client
+        container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
+        
+        # Upload the content to blob storage
+        blob_client = container_client.get_blob_client(blob_filename)
+        blob_client.upload_blob(content, overwrite=True)
+        
+        return blob_filename
+    except Exception as e:
+        st.error(f"Error saving to blob storage: {str(e)}")
+        return None
+    
 # Function to save interview responses to a text file
 def save_interview_responses(interview_data):
     try:
@@ -34,10 +82,17 @@ def save_interview_responses(interview_data):
                 file.write(f"Answer: {response['answer']}\n\n")
                 file.write("-" * 80 + "\n\n")
         
+        # Also save to Azure Blob Storage
+        blob_path = save_to_blob_storage(interview_data)
+        if blob_path:
+            st.sidebar.success(f"✓ Responses saved to Azure Blob Storage: {blob_path}")
+        
         return filename
     except Exception as e:
         st.error(f"Error saving responses: {str(e)}")
         return None
+
+
     
 # Streamed response emulator
 def response_generator(response_text):
@@ -210,7 +265,14 @@ def update_interview_status():
     except Exception as e:
         st.sidebar.error(f"Error updating interview status: {str(e)}")
         return False
-    
+
+# Add a button in the sidebar to test the blob storage functionality
+if st.sidebar.button("Save Responses to Azure Blob"):
+    blob_path = save_to_blob_storage(st.session_state.interview_data)
+    if blob_path:
+        st.sidebar.success(f"Responses manually saved to Azure Blob: {blob_path}")
+
+
 # Function to ask the next question
 def ask_next_question():
     if st.session_state.question_index < len(st.session_state.interview_questions):
