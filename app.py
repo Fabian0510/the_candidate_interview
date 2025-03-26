@@ -14,7 +14,12 @@ def save_interview_responses(interview_data):
         os.makedirs("interview_responses", exist_ok=True)
         
         # Create a filename based on candidate name, role, and date
-        filename = f"interview_responses/{interview_data['candidate_name']}_{interview_data['role_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        # Replace spaces with underscores in candidate name and role name
+        sanitized_candidate_name = interview_data['candidate_name'].replace(' ', '_')
+        sanitized_role_name = interview_data['role_name'].replace(' ', '_')
+        
+        # Create filename with no spaces
+        filename = f"interview_responses/{sanitized_candidate_name}_{sanitized_role_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         
         # Write responses to the text file
         with open(filename, "w") as file:
@@ -33,7 +38,7 @@ def save_interview_responses(interview_data):
     except Exception as e:
         st.error(f"Error saving responses: {str(e)}")
         return None
-
+    
 # Streamed response emulator
 def response_generator(response_text):
     for word in response_text.split():
