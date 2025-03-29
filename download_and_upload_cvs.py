@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-Download and Upload CVs Script
+Download and Upload CVs Webhook
 
+Responds to POST requests and triggers the download and upload process.
 Downloads CVs from the API for each role, saves them to role-specific directories,
 and then uploads them to Azure Blob Storage using credentials from .streamlit/secrets.toml.
 """
@@ -15,6 +16,7 @@ import toml
 from datetime import datetime
 from azure.storage.blob import BlobServiceClient
 from typing import Dict, Any, List, Tuple
+from flask import Flask, request, jsonify
 
 # Configure logging
 logging.basicConfig(
@@ -321,7 +323,7 @@ def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
     
     return successful_uploads
 
-def main():
+def process_cvs():
     """Run the download and upload process."""
     logger.info("=== Starting CV Download and Upload Process ===")
     logger.info(f"Azure Storage Account: {AZURE_STORAGE_ACCOUNT_NAME}")
@@ -341,7 +343,38 @@ def main():
     logger.info(f"Total CVs uploaded to Azure: {uploaded_cvs}")
     logger.info("=== Process Completed ===")
     
-    return 0 if downloaded_cvs > 0 and uploaded_cvs > 0 else 1
+    return {
+        "success": downloaded_cvs > 0 and uploaded_cvs > 0,
+        "cvs_downloaded": downloaded_cvs,
+        "cvs_uploaded": uploaded_cvs
+    }
+
+# Create Flask app
+app = Flask(__name__)
+
+@app.route('/cv_uploader', methods=['POST'])
+def cv_uploader():
+    """Webhook endpoint to trigger CV download and upload process."""
+    logger.info("CV uploader webhook triggered")
+    
+    # Run the process
+    result = process_cvs()
+    
+    # Return response
+    return jsonify(result)
+
+def main():
+    """Run the download and upload process as a standalone script."""
+    result = process_cvs()
+    return 0 if result["success"] else 1
 
 if __name__ == "__main__":
-    exit(main())
+    # Check if running as script or as webhook
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == '--webhook':
+        # Run as webhook
+        port = int(os.environ.get('PORT', 8888))
+        app.run(host='0.0.0.0', port=port)
+    else:
+        # Run as script
+        exit(main())
