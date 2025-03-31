@@ -201,6 +201,7 @@ def get_default_questions():
 role_name = st.query_params.get("role", "Unknown Role")
 candidate_name = st.query_params.get("candidate", "Unknown User")
 interview_id = st.query_params.get("interview_id", "1")  # Default to ID 1 if not provided
+cv_filename = st.query_params.get("cv")  # Get CV filename parameter, None if not provided
 
 # Initialize interview data structure
 if "interview_data" not in st.session_state:
@@ -209,6 +210,7 @@ if "interview_data" not in st.session_state:
         "role_name": role_name,
         "interview_id": interview_id,
         "interview_date": datetime.now().strftime("%Y-%m-%d"),
+        "cv_filename": cv_filename,  # Store CV filename in session state
         "responses": []
     }
 
@@ -250,7 +252,8 @@ def update_interview_status():
             "Id": interview_id,  # Use the interview_id from URL parameters
             "Interview Status": "Complete",
             "Interview Rank": interview_rank,
-            "Answers": all_answers  # Add all answers to the Answers field
+            "Answers": all_answers,  # Add all answers to the Answers field
+            "CV Name": st.session_state.interview_data.get("cv_filename")  # Include CV filename in API update
         }
         
         st.sidebar.write("Sending PATCH request:")
@@ -352,6 +355,7 @@ st.sidebar.title("Dev Debug")
 st.sidebar.write(f"Current role: {role_name}")
 st.sidebar.write(f"Current candidate: {candidate_name}")
 st.sidebar.write(f"Interview ID: {interview_id}")
+st.sidebar.write(f"CV Filename: {cv_filename or 'Not provided'}")
 st.sidebar.write(f"Question index: {st.session_state.question_index}/{len(st.session_state.interview_questions)}")
 st.sidebar.write(f"API Token: {API_TOKEN[:5]}..." if API_TOKEN else "No API token found")
 
