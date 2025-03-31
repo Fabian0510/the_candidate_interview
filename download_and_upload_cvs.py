@@ -234,9 +234,8 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
                 # Create full download URL
                 download_url = f"{BASE_URL}/{file_path}"
                 
-                # Create output filename
-                output_filename = f"{candidate_name}_{file_title}"
-                output_path = os.path.join(cv_dir_path, output_filename)
+                # Use the original filename without modification
+                output_path = os.path.join(cv_dir_path, file_title)
                 
                 # Download the CV
                 logger.info(f"Downloading CV for {candidate_name}: {file_title}")
