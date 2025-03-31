@@ -144,6 +144,9 @@ def sanitize_filename(filename: str) -> str:
     unsafe_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
     for char in unsafe_chars:
         filename = filename.replace(char, '_')
+    
+    # Replace spaces with underscores to be consistent with app.py
+    filename = filename.replace(' ', '_')
     return filename
 
 def process_roles_and_cvs() -> Tuple[int, List[str]]:
@@ -269,6 +272,7 @@ def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, cv
         str: Blob path if successful, None otherwise
     """
     # Sanitize role name for blob path
+    # This will use the sanitize_filename function which now replaces spaces with underscores
     sanitized_role_name = sanitize_filename(role_name)
     
     # Extract CV filename if not provided
