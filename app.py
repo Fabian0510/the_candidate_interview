@@ -28,16 +28,9 @@ except Exception as e:
 # Function to save interview responses to Azure Blob Storage
 def save_to_blob_storage(interview_data):
     try:
-        # If we have a formatted role name from the API, use it
-        if interview_data.get('formatted_role_name'):
-            role_path = interview_data['formatted_role_name']
-            st.sidebar.info(f"Using formatted role name from API: {role_path}")
-        else:
-            # Fallback to creating our own role path
-            role_id = interview_data.get('interview_id', '0')
-            sanitized_role_name = interview_data['role_name'].replace(' ', '_')
-            role_path = f"{role_id}_{sanitized_role_name}"
-            st.sidebar.info(f"Creating role path from interview data: {role_path}")
+        # Use the formatted role name that's now guaranteed to exist
+        role_path = interview_data['formatted_role_name']
+        st.sidebar.info(f"Using role path: {role_path}")
         
         # Get CV filename (if available) or use candidate name
         cv_filename = interview_data.get('cv_filename')
@@ -88,16 +81,9 @@ def save_to_blob_storage(interview_data):
 # Function to save interview responses to a text file
 def save_interview_responses(interview_data):
     try:
-        # If we have a formatted role name from the API, use it
-        if interview_data.get('formatted_role_name'):
-            role_path = interview_data['formatted_role_name']
-            st.sidebar.info(f"Using formatted role name from API: {role_path}")
-        else:
-            # Fallback to creating our own role path
-            role_id = interview_data.get('interview_id', '0')
-            sanitized_role_name = interview_data['role_name'].replace(' ', '_')
-            role_path = f"{role_id}_{sanitized_role_name}"
-            st.sidebar.info(f"Creating role path from interview data: {role_path}")
+        # Use the formatted role name that's now guaranteed to exist
+        role_path = interview_data['formatted_role_name']
+        st.sidebar.info(f"Using role path for local file: {role_path}")
         
         # Get CV filename (if available) or use candidate name
         cv_filename = interview_data.get('cv_filename')
@@ -240,10 +226,10 @@ role_name = st.query_params.get("role", "Unknown Role")
 candidate_name = st.query_params.get("candidate", "Unknown User")
 interview_id = st.query_params.get("interview_id", "1")  # Default to ID 1 if not provided
 cv_filename = st.query_params.get("cv")  # Get CV filename parameter, None if not provided
+formatted_role_name = st.query_params.get("role_path")  # Get formatted role name directly from URL
 
-# Fetch additional interview data if we have an interview ID
-formatted_role_name = None
-if interview_id and interview_id != "1":
+# If we don't have formatted_role_name from URL, try to fetch it from the API
+if not formatted_role_name and interview_id and interview_id != "1":
     try:
         # Construct the API URL to get interview details
         interview_url = f"http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records?where=(Id,eq,{interview_id})"
@@ -264,8 +250,14 @@ if interview_id and interview_id != "1":
                 interview_data = data['list'][0]
                 # Get the formatted role name from the API
                 formatted_role_name = interview_data.get("Role Name")
+                st.sidebar.info(f"Fetched formatted role name from API: {formatted_role_name}")
     except Exception as e:
         st.sidebar.error(f"Error fetching interview data: {str(e)}")
+
+# If we still don't have formatted_role_name, create a simple fallback
+if not formatted_role_name:
+    formatted_role_name = f"0_{role_name.replace(' ', '_')}"
+    st.sidebar.info(f"Using fallback formatted role name: {formatted_role_name}")
 
 # Initialize interview data structure
 if "interview_data" not in st.session_state:

@@ -115,7 +115,7 @@ def get_interview_title(client, job_title, first_name, last_name):
     logging.debug(f"Generated interview title: {title}")
     return title
 
-def get_portal_link(job_title, first_name, last_name, interview_id=None, cv_filename=None):
+def get_portal_link(job_title, first_name, last_name, interview_id=None, cv_filename=None, role_path=None):
     # URL encode the parameters
     role = urllib.parse.quote(job_title)
     candidate = urllib.parse.quote(f"{first_name} {last_name}")
@@ -130,6 +130,10 @@ def get_portal_link(job_title, first_name, last_name, interview_id=None, cv_file
     # Add cv_filename parameter if available
     if cv_filename is not None:
         portal_link += f"&cv={urllib.parse.quote(cv_filename)}"
+    
+    # Add role_path parameter if available
+    if role_path is not None:
+        portal_link += f"&role_path={urllib.parse.quote(role_path)}"
         
     logging.debug(f"Generated portal link: {portal_link}")
     return portal_link
@@ -290,8 +294,8 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
     logging.info(f"  Scheduled Date: {interview_date}")
     logging.info(f"  Date Added: {current_datetime}")
     
-    # Initially create with a temporary portal link, including CV filename if available
-    initial_portal_link = get_portal_link(job_title, first_name, last_name, cv_filename=cv_filename)
+    # Initially create with a temporary portal link, including CV filename and role path
+    initial_portal_link = get_portal_link(job_title, first_name, last_name, cv_filename=cv_filename, role_path=formatted_role_name)
     
     # Get random questions for this interview
     interview_questions = get_random_questions()
@@ -325,9 +329,9 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
                     interview_id = int(interview_id)
                     logging.info(f"✓ Interview created successfully with ID: {interview_id}")
                     
-                    # Create the updated portal link with the interview ID and CV filename
-                    updated_portal_link = get_portal_link(job_title, first_name, last_name, interview_id, cv_filename)
-                    logging.info(f"Updating portal link to include interview ID and CV filename: {updated_portal_link}")
+                    # Create the updated portal link with the interview ID, CV filename, and role path
+                    updated_portal_link = get_portal_link(job_title, first_name, last_name, interview_id, cv_filename, formatted_role_name)
+                    logging.info(f"Updating portal link to include interview ID, CV filename, and role path: {updated_portal_link}")
                     
                     # Use the PATCH format that works based on your CURL example
                     update_payload = {
