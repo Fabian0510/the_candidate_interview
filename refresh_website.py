@@ -183,12 +183,13 @@ def get_all_candidate_job_pairs(jobs_data):
     for job in jobs_data['list']:
         job_title = job.get("Job Title")
         client = job.get("Client")
+        role_id = job.get("Id")  # Get the role ID from the job
         
         if not job_title:
             logging.warning(f"Skipping job record - no job title found")
             continue
             
-        logging.info(f"Processing job: {job_title} for client: {client or 'No Client'}")
+        logging.info(f"Processing job: {job_title} (ID: {role_id}) for client: {client or 'No Client'}")
         for cv_relation in job.get("nc_92rx___nc_m2m_JobDescription_CVs", []):
             cv = cv_relation.get("CV")
             if cv:
@@ -215,7 +216,8 @@ def get_all_candidate_job_pairs(jobs_data):
                     "first_name": first_name,
                     "last_name": last_name,
                     "candidate_id": candidate_id,
-                    "cv_filename": cv_filename
+                    "cv_filename": cv_filename,
+                    "role_id": role_id  # Include role ID in the pairs
                 })
     
     logging.info(f"Found {len(pairs)} total candidate-job pairs")
@@ -269,13 +271,19 @@ def link_interview_to_candidate(interview_id: int, candidate_id: int) -> bool:
         logging.error(f"Error linking interview to candidate: {str(e)}")
         return False
 
-def create_interview(client, job_title, first_name, last_name, candidate_id=None, cv_filename=None):
+def create_interview(client, job_title, first_name, last_name, candidate_id=None, cv_filename=None, role_id=None):
     interview_date = (datetime.now() + timedelta(weeks=2)).strftime("%Y-%m-%d")
     current_datetime = get_current_datetime()
+    
+    # Create role name in the same format as download_and_upload_cvs.py
+    sanitized_role_name = job_title.replace(' ', '_')
+    formatted_role_name = f"{role_id}_{sanitized_role_name}" if role_id else sanitized_role_name
     
     logging.info(f"Creating interview for:")
     logging.info(f"  Client: {client or 'No Client'}")
     logging.info(f"  Job Title: {job_title}")
+    logging.info(f"  Role ID: {role_id or 'Not available'}")
+    logging.info(f"  Formatted Role Name: {formatted_role_name}")
     logging.info(f"  Candidate: {first_name} {last_name}")
     logging.info(f"  Candidate ID: {candidate_id or 'Not found'}")
     logging.info(f"  CV Filename: {cv_filename or 'Not available'}")
@@ -292,11 +300,12 @@ def create_interview(client, job_title, first_name, last_name, candidate_id=None
         "Title": get_interview_title(client, job_title, first_name, last_name),
         "Interview Portal Link": initial_portal_link,
         "Interview Due Date": interview_date,
-        "Interview Status": "Ready for Interview",  # Updated to "Ready for Interview"
+        "Interview Status": "Ready for Interview",
         "Interview Rank": 0,
-        "Questions": interview_questions,  # Using the randomly selected questions
+        "Questions": interview_questions,
         "Date Added": current_datetime,
-        "CV Name": cv_filename  # Added CV Name field
+        "CV Name": cv_filename,  # Added CV Name field
+        "Role Name": formatted_role_name  # Add formatted role name field
     }
     
     logging.debug("Sending API request with payload:")
@@ -507,7 +516,8 @@ def check_and_create_interviews():
                     pair["first_name"], 
                     pair["last_name"],
                     pair.get("candidate_id"),  # Pass the candidate ID for linking
-                    pair.get("cv_filename")    # Pass the CV filename
+                    pair.get("cv_filename"),   # Pass the CV filename
+                    pair.get("role_id")        # Pass the role ID
                 )
                 if success:
                     created_count += 1

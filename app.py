@@ -28,11 +28,16 @@ except Exception as e:
 # Function to save interview responses to Azure Blob Storage
 def save_to_blob_storage(interview_data):
     try:
-        # Extract role ID from interview_id (if available)
-        role_id = interview_data.get('interview_id', '0')
-        
-        # Get role name and sanitize it
-        sanitized_role_name = interview_data['role_name'].replace(' ', '_')
+        # If we have a formatted role name from the API, use it
+        if interview_data.get('formatted_role_name'):
+            role_path = interview_data['formatted_role_name']
+            st.sidebar.info(f"Using formatted role name from API: {role_path}")
+        else:
+            # Fallback to creating our own role path
+            role_id = interview_data.get('interview_id', '0')
+            sanitized_role_name = interview_data['role_name'].replace(' ', '_')
+            role_path = f"{role_id}_{sanitized_role_name}"
+            st.sidebar.info(f"Creating role path from interview data: {role_path}")
         
         # Get CV filename (if available) or use candidate name
         cv_filename = interview_data.get('cv_filename')
@@ -45,7 +50,7 @@ def save_to_blob_storage(interview_data):
             base_filename = f"{sanitized_candidate_name}_answers.txt"
         
         # Create blob path with roles/roleid_rolename/answers/<cv_name>_answers.txt structure
-        blob_filename = f"roles/{role_id}_{sanitized_role_name}/answers/{base_filename}"
+        blob_filename = f"roles/{role_path}/answers/{base_filename}"
         
         # Generate the content to be saved
         content = ""
@@ -83,11 +88,16 @@ def save_to_blob_storage(interview_data):
 # Function to save interview responses to a text file
 def save_interview_responses(interview_data):
     try:
-        # Extract role ID from interview_id (if available)
-        role_id = interview_data.get('interview_id', '0')
-        
-        # Get role name and sanitize it
-        sanitized_role_name = interview_data['role_name'].replace(' ', '_')
+        # If we have a formatted role name from the API, use it
+        if interview_data.get('formatted_role_name'):
+            role_path = interview_data['formatted_role_name']
+            st.sidebar.info(f"Using formatted role name from API: {role_path}")
+        else:
+            # Fallback to creating our own role path
+            role_id = interview_data.get('interview_id', '0')
+            sanitized_role_name = interview_data['role_name'].replace(' ', '_')
+            role_path = f"{role_id}_{sanitized_role_name}"
+            st.sidebar.info(f"Creating role path from interview data: {role_path}")
         
         # Get CV filename (if available) or use candidate name
         cv_filename = interview_data.get('cv_filename')
@@ -100,7 +110,7 @@ def save_interview_responses(interview_data):
             base_filename = f"{sanitized_candidate_name}_answers.txt"
         
         # Create directory structure with the same pattern as download_and_upload_cvs.py
-        dir_path = f"roles/{role_id}_{sanitized_role_name}/answers"
+        dir_path = f"roles/{role_path}/answers"
         os.makedirs(dir_path, exist_ok=True)
         
         # Create full file path
@@ -231,6 +241,32 @@ candidate_name = st.query_params.get("candidate", "Unknown User")
 interview_id = st.query_params.get("interview_id", "1")  # Default to ID 1 if not provided
 cv_filename = st.query_params.get("cv")  # Get CV filename parameter, None if not provided
 
+# Fetch additional interview data if we have an interview ID
+formatted_role_name = None
+if interview_id and interview_id != "1":
+    try:
+        # Construct the API URL to get interview details
+        interview_url = f"http://20.254.105.163:8080/api/v2/tables/mpims4p3zrwsarx/records?where=(Id,eq,{interview_id})"
+        
+        # API Token
+        TOKEN = os.environ.get("API_TOKEN", "EgEls5yPpzOqhGdtL1CDcZkNolXhQhIFfwd4DIe0")
+        
+        # Make the API request
+        headers = {
+            'accept': 'application/json',
+            'xc-token': TOKEN
+        }
+        
+        response = requests.get(interview_url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            if data and 'list' in data and len(data['list']) > 0:
+                interview_data = data['list'][0]
+                # Get the formatted role name from the API
+                formatted_role_name = interview_data.get("Role Name")
+    except Exception as e:
+        st.sidebar.error(f"Error fetching interview data: {str(e)}")
+
 # Initialize interview data structure
 if "interview_data" not in st.session_state:
     st.session_state.interview_data = {
@@ -239,6 +275,7 @@ if "interview_data" not in st.session_state:
         "interview_id": interview_id,
         "interview_date": datetime.now().strftime("%Y-%m-%d"),
         "cv_filename": cv_filename,  # Store CV filename in session state
+        "formatted_role_name": formatted_role_name,  # Store formatted role name from API
         "responses": []
     }
 
@@ -384,6 +421,7 @@ st.sidebar.write(f"Current role: {role_name}")
 st.sidebar.write(f"Current candidate: {candidate_name}")
 st.sidebar.write(f"Interview ID: {interview_id}")
 st.sidebar.write(f"CV Filename: {cv_filename or 'Not provided'}")
+st.sidebar.write(f"Formatted Role Name: {formatted_role_name or 'Not provided'}")
 st.sidebar.write(f"Question index: {st.session_state.question_index}/{len(st.session_state.interview_questions)}")
 st.sidebar.write(f"API Token: {API_TOKEN[:5]}..." if API_TOKEN else "No API token found")
 
