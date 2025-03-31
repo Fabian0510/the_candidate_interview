@@ -168,7 +168,7 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     
     # Process each role
     for role in roles:
-        role_id = role.get("id")
+        role_id = role.get("Id")  # Note: "Id" is capitalized in the API response
         role_title = role.get("Job Title")
         if not role_title or not role_id:
             logger.warning("Role without ID or title found, skipping")
@@ -203,10 +203,19 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
             last_name = cv.get("Last Name", "")
             candidate_name = f"{first_name}_{last_name}".replace(" ", "_")
             
-            # Process CV files
-            cv_files = cv.get("CV", [])
-            if not cv_files:
+            # Process CV files - handle both null and array cases
+            cv_files = cv.get("CV")
+            if cv_files is None:
                 logger.warning(f"No CV files found for candidate {candidate_name}")
+                continue
+                
+            # Ensure cv_files is a list even if there's only one item
+            if not isinstance(cv_files, list):
+                logger.warning(f"CV field is not an array for candidate {candidate_name}")
+                continue
+                
+            if not cv_files:
+                logger.warning(f"Empty CV files array for candidate {candidate_name}")
                 continue
                 
             # Process each CV file
