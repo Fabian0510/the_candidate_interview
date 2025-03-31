@@ -28,12 +28,24 @@ except Exception as e:
 # Function to save interview responses to Azure Blob Storage
 def save_to_blob_storage(interview_data):
     try:
-        # Create a filename based on candidate name, role, and date
-        sanitized_candidate_name = interview_data['candidate_name'].replace(' ', '_')
+        # Extract role ID from interview_id (if available)
+        role_id = interview_data.get('interview_id', '0')
+        
+        # Get role name and sanitize it
         sanitized_role_name = interview_data['role_name'].replace(' ', '_')
         
-        # Create filename with no spaces
-        blob_filename = f"answers/{sanitized_candidate_name}_{sanitized_role_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        # Get CV filename (if available) or use candidate name
+        cv_filename = interview_data.get('cv_filename')
+        if cv_filename:
+            # Use CV filename as the base for the answer file
+            base_filename = cv_filename.split('.')[0] + '_answers.txt'
+        else:
+            # Fall back to candidate name if CV filename not available
+            sanitized_candidate_name = interview_data['candidate_name'].replace(' ', '_')
+            base_filename = f"{sanitized_candidate_name}_answers.txt"
+        
+        # Create blob path with roles/roleid_rolename/answers/<cv_name>_answers.txt structure
+        blob_filename = f"roles/{role_id}_{sanitized_role_name}/answers/{base_filename}"
         
         # Generate the content to be saved
         content = ""
@@ -71,16 +83,28 @@ def save_to_blob_storage(interview_data):
 # Function to save interview responses to a text file
 def save_interview_responses(interview_data):
     try:
-        # Create a directory for saving responses if it doesn't exist
-        os.makedirs("interview_responses", exist_ok=True)
+        # Extract role ID from interview_id (if available)
+        role_id = interview_data.get('interview_id', '0')
         
-        # Create a filename based on candidate name, role, and date
-        # Replace spaces with underscores in candidate name and role name
-        sanitized_candidate_name = interview_data['candidate_name'].replace(' ', '_')
+        # Get role name and sanitize it
         sanitized_role_name = interview_data['role_name'].replace(' ', '_')
         
-        # Create filename with no spaces
-        filename = f"interview_responses/{sanitized_candidate_name}_{sanitized_role_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        # Get CV filename (if available) or use candidate name
+        cv_filename = interview_data.get('cv_filename')
+        if cv_filename:
+            # Use CV filename as the base for the answer file
+            base_filename = cv_filename.split('.')[0] + '_answers.txt'
+        else:
+            # Fall back to candidate name if CV filename not available
+            sanitized_candidate_name = interview_data['candidate_name'].replace(' ', '_')
+            base_filename = f"{sanitized_candidate_name}_answers.txt"
+        
+        # Create directory structure with the same pattern as download_and_upload_cvs.py
+        dir_path = f"roles/{role_id}_{sanitized_role_name}/answers"
+        os.makedirs(dir_path, exist_ok=True)
+        
+        # Create full file path
+        filename = f"{dir_path}/{base_filename}"
         
         # Write responses to the text file
         with open(filename, "w") as file:
@@ -94,6 +118,10 @@ def save_interview_responses(interview_data):
                 file.write(f"Question {i}: {response['question']}\n\n")
                 file.write(f"Answer: {response['answer']}\n\n")
                 file.write("-" * 80 + "\n\n")
+        
+        # Log details about the file storage
+        st.sidebar.info(f"Saving responses with CV: {cv_filename or 'None'}")
+        st.sidebar.info(f"Using directory structure: roles/{role_id}_{sanitized_role_name}/answers/")
         
         # Also save to Azure Blob Storage
         blob_path = save_to_blob_storage(interview_data)
