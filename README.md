@@ -48,14 +48,6 @@ Logs are written to `cv_process.log` and include:
 - Upload confirmations
 - Error details when operations fail
 
-### Candidate Shortlisting (`add_shortlist.py`)
-
-Processes candidate information to identify and tag shortlisted candidates.
-
-```bash
-python add_shortlist.py
-```
-
 ### Interview Scheduling (`interview_scheduler.log`)
 
 Logs of interview scheduling activities and operations.
@@ -124,7 +116,6 @@ python refresh_website.py
 /
 ├── app.py                       # Main Streamlit application
 ├── download_and_upload_cvs.py   # CV downloader and uploader (script and webhook)
-├── add_shortlist.py             # Candidate shortlisting tool
 ├── save_to_adls.py              # Azure Data Lake Storage utility
 ├── refresh_website.py           # Website refresh utility
 ├── interview_file_save.py       # Interview file handler
