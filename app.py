@@ -117,7 +117,7 @@ def save_interview_responses(interview_data):
         
         # Log details about the file storage
         st.sidebar.info(f"Saving responses with CV: {cv_filename or 'None'}")
-        st.sidebar.info(f"Using directory structure: roles/{role_id}_{sanitized_role_name}/answers/")
+        st.sidebar.info(f"Using directory structure: roles/{role_path}/answers/")
         
         # Also save to Azure Blob Storage
         blob_path = save_to_blob_storage(interview_data)
