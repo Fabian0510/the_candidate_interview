@@ -153,9 +153,8 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     Returns:
         Tuple[int, List[str]]: Number of downloaded CVs and list of downloaded file paths
     """
-    # Create a base directory for CVs
-    base_dir = "role_cvs"
-    os.makedirs(base_dir, exist_ok=True)
+    # Create a base directory for CVs (just use current directory)
+    base_dir = os.getcwd()
     
     # Fetch all jobs (roles)
     logger.info("Fetching roles from API...")
@@ -168,21 +167,26 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     
     # Process each role
     for role in roles:
+        role_id = role.get("id")
         role_title = role.get("Job Title")
-        if not role_title:
-            logger.warning("Role without title found, skipping")
+        if not role_title or not role_id:
+            logger.warning("Role without ID or title found, skipping")
             continue
             
         # Sanitize role name for directory creation
-        role_dir_name = sanitize_filename(role_title)
-        role_dir_path = os.path.join(base_dir, role_dir_name)
+        sanitized_role_title = sanitize_filename(role_title)
+        role_dir_name = f"{role_id}_{sanitized_role_title}"
         
-        # Create role directory if it doesn't exist
-        os.makedirs(role_dir_path, exist_ok=True)
+        # Create role directory structure with cvs subdirectory
+        role_dir_path = os.path.join(base_dir, role_dir_name)
+        cv_dir_path = os.path.join(role_dir_path, "cvs")
+        
+        # Create directory structure if it doesn't exist
+        os.makedirs(cv_dir_path, exist_ok=True)
         
         # Log the role being processed
         client = role.get("Client", "No Client")
-        logger.info(f"Processing role: {role_title} for client: {client}")
+        logger.info(f"Processing role: {role_title} (ID: {role_id}) for client: {client}")
         
         # Get CV relations for this role
         cv_relations = role.get("nc_92rx___nc_m2m_JobDescription_CVs", [])
@@ -222,7 +226,7 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
                 
                 # Create output filename
                 output_filename = f"{candidate_name}_{file_title}"
-                output_path = os.path.join(role_dir_path, output_filename)
+                output_path = os.path.join(cv_dir_path, output_filename)
                 
                 # Download the CV
                 logger.info(f"Downloading CV for {candidate_name}: {file_title}")
@@ -242,32 +246,28 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     
     return downloaded_cvs, downloaded_paths
 
-def upload_file_to_blob_storage(file_path: str, role_name: str, candidate_name: str = None) -> str:
+def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, cv_filename: str = None) -> str:
     """
     Upload a CV file to Azure Blob Storage.
     
     Args:
         file_path (str): Path to the CV file to upload
+        role_id (str): ID of the role
         role_name (str): Name of the role for directory structure
-        candidate_name (str, optional): Name of the candidate, extracted from filename if None
+        cv_filename (str, optional): Name of the CV file, extracted from file_path if None
         
     Returns:
         str: Blob path if successful, None otherwise
     """
-    # Sanitize role name and candidate name for blob path
-    sanitized_role_name = role_name.replace(' ', '_')
+    # Sanitize role name for blob path
+    sanitized_role_name = sanitize_filename(role_name)
     
-    # Extract candidate name from file name if not provided
-    if candidate_name is None:
-        file_name = os.path.basename(file_path)
-        # Assume first part of filename is candidate name (before first underscore)
-        candidate_name = file_name.split('_')[0] if '_' in file_name else "Unknown"
+    # Extract CV filename if not provided
+    if cv_filename is None:
+        cv_filename = os.path.basename(file_path)
     
-    sanitized_candidate_name = candidate_name.replace(' ', '_')
-    
-    # Create blob filename with role, candidate, and timestamp
-    file_extension = os.path.splitext(file_path)[1]
-    blob_filename = f"cvs/{sanitized_role_name}/{sanitized_candidate_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{file_extension}"
+    # Create blob path with roleid_rolename/cvs/<cv_name> structure
+    blob_filename = f"{role_id}_{sanitized_role_name}/cvs/{cv_filename}"
     
     try:    
         # Connect to blob storage
@@ -303,23 +303,41 @@ def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
     successful_uploads = 0
     
     for file_path in downloaded_paths:
-        # Extract role name from directory structure
-        parts = file_path.split(os.sep)
-        if len(parts) >= 2 and parts[-2] == "role_cvs":
-            role_name = parts[-1]
-        else:
-            role_name = parts[-2]  # role is the parent directory name
+        # Extract role information from directory structure 
+        # Expected path structure: /path/to/roleid_rolename/cvs/candidate_file.pdf
+        path_parts = file_path.split(os.sep)
         
-        # Extract candidate name from filename (format: CandidateName_rest_of_filename.ext)
-        filename = os.path.basename(file_path)
-        parts = filename.split('_', 1)
-        candidate_name = parts[0] if parts else "Unknown"
-        
-        # Upload the file
-        blob_path = upload_file_to_blob_storage(file_path, role_name, candidate_name)
-        
-        if blob_path:
-            successful_uploads += 1
+        # Find the index of "cvs" directory in the path
+        try:
+            cvs_index = path_parts.index("cvs")
+            if cvs_index <= 0:
+                logger.warning(f"Invalid path structure - 'cvs' is at the beginning: {file_path}")
+                continue
+                
+            # Role directory is one level above "cvs"
+            role_dir_name = path_parts[cvs_index - 1]
+            
+            # Split role directory into ID and name (format: roleid_rolename)
+            role_parts = role_dir_name.split('_', 1)
+            if len(role_parts) < 2:
+                logger.warning(f"Role directory name does not contain ID and name: {role_dir_name}")
+                continue
+                
+            role_id = role_parts[0]
+            role_name = role_parts[1]
+            
+            # Get the CV filename
+            cv_filename = os.path.basename(file_path)
+            
+            # Upload the file
+            blob_path = upload_file_to_blob_storage(file_path, role_id, role_name, cv_filename)
+            
+            if blob_path:
+                successful_uploads += 1
+                
+        except ValueError:
+            logger.warning(f"Path does not contain 'cvs' directory: {file_path}")
+            continue
     
     return successful_uploads
 
