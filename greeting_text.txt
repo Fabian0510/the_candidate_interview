@@ -1,0 +1,7 @@
+Good morning, {candidate_name}! 
+
+Welcome to The Candidate's interview platform for the {role_name} position.
+
+We'll be asking some questions to establish your suitability for this role. Take your time to provide thoughtful answers.
+
+Let's get started!

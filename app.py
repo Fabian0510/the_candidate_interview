@@ -273,10 +273,33 @@ if "interview_data" not in st.session_state:
 
 st.title(f"{candidate_name} | {role_name} Interview")
 
+# Function to load greeting text from file with parameter interpolation
+def load_greeting_text(candidate_name, role_name):
+    try:
+        with open("greeting_text.txt", "r") as file:
+            greeting_template = file.read()
+            # Create a context dictionary with all the variables that can be interpolated
+            context = {
+                "candidate_name": candidate_name,
+                "role_name": role_name,
+                "interview_date": datetime.now().strftime("%Y-%m-%d"),
+                "formatted_role_name": formatted_role_name
+            }
+            # Use str.format_map to interpolate variables from the dictionary
+            greeting = greeting_template.format_map(context)
+            return greeting
+    except Exception as e:
+        st.sidebar.error(f"Error loading greeting text: {str(e)}")
+        # Fallback greeting if file cannot be read
+        return f"Good morning, {candidate_name}! Welcome to The Candidate's interview platform!"
+
 # Initialize chat history and fetch interview questions
 if "messages" not in st.session_state:
+    # Load and format the greeting from greeting_text.txt
+    greeting = load_greeting_text(candidate_name, role_name)
+    
     st.session_state.messages = [
-        {"role": "assistant", "content": f"Good morning, {candidate_name}! Welcome to The Candidate's interview platform!"}
+        {"role": "assistant", "content": greeting}
     ]
     # Fetch questions from API
     st.session_state.interview_questions = fetch_interview_questions(interview_id)
@@ -375,13 +398,10 @@ def ask_next_question():
         st.session_state.interview_complete = True
         update_interview_status()
 
-# Start conversation with a greeting
+# Start conversation with first question
 if "greeted" not in st.session_state:
     st.session_state.greeted = True
-    with st.chat_message("assistant"):
-        greeting = f"We'll be asking some questions to establish your suitability for the role of {role_name}. Let's get started."
-        st.write_stream(response_generator(greeting))
-    st.session_state.messages.append({"role": "assistant", "content": greeting})
+    # Skip the additional greeting and go straight to the first question
     ask_next_question()
 
 # Accept user input
