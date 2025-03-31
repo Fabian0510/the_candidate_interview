@@ -153,8 +153,9 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     Returns:
         Tuple[int, List[str]]: Number of downloaded CVs and list of downloaded file paths
     """
-    # Create a base directory for CVs (just use current directory)
-    base_dir = os.getcwd()
+    # Create a top-level "roles" directory for CVs
+    base_dir = os.path.join(os.getcwd(), "roles")
+    os.makedirs(base_dir, exist_ok=True)
     
     # Fetch all jobs (roles)
     logger.info("Fetching roles from API...")
@@ -266,8 +267,8 @@ def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, cv
     if cv_filename is None:
         cv_filename = os.path.basename(file_path)
     
-    # Create blob path with roleid_rolename/cvs/<cv_name> structure
-    blob_filename = f"{role_id}_{sanitized_role_name}/cvs/{cv_filename}"
+    # Create blob path with roles/roleid_rolename/cvs/<cv_name> structure
+    blob_filename = f"roles/{role_id}_{sanitized_role_name}/cvs/{cv_filename}"
     
     try:    
         # Connect to blob storage
@@ -312,6 +313,11 @@ def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
             cvs_index = path_parts.index("cvs")
             if cvs_index <= 0:
                 logger.warning(f"Invalid path structure - 'cvs' is at the beginning: {file_path}")
+                continue
+                
+            # Check if "roles" is in the path
+            if "roles" not in path_parts:
+                logger.warning(f"Path does not contain 'roles' directory: {file_path}")
                 continue
                 
             # Role directory is one level above "cvs"
