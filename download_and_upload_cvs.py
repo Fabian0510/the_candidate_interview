@@ -618,27 +618,58 @@ def update_role_status(role_id: str, new_status: str = "Generating Questions") -
         bool: True if the update was successful, False otherwise
     """
     try:
-        # API endpoint for updating a role
-        update_url = jobs_url
+        # First fetch the current role details to ensure we're updating the correct record
+        fetch_url = f"{BASE_API_URL}/tables/mgwvuug18vkrhg0/records/{role_id}"
+        logger.info(f"Fetching role details for ID: {role_id}")
         
-        # Prepare the update payload
+        fetch_response = requests.get(fetch_url, headers=headers)
+        if fetch_response.status_code != 200:
+            logger.error(f"Failed to fetch role details. Status code: {fetch_response.status_code}")
+            logger.error(f"Error response: {fetch_response.text}")
+            return False
+            
+        role_data = fetch_response.json()
+        logger.info(f"Current role data: {json.dumps(role_data)}")
+        
+        # API endpoint for updating a role
+        update_url = f"{BASE_API_URL}/tables/mgwvuug18vkrhg0/records"
+        
+        # Prepare the update payload - only include the ID and Status fields
         update_payload = {
-            "Id": role_id,
+            "Id": int(role_id) if role_id.isdigit() else role_id,  # Ensure ID is an integer if possible
             "Status": new_status
         }
         
         logger.info(f"Updating role {role_id} status to '{new_status}'")
+        logger.info(f"Update URL: {update_url}")
         logger.info(f"Update payload: {json.dumps(update_payload)}")
+        logger.info(f"Headers: {json.dumps(dict(headers))}")
         
         # Send PATCH request to update the role
-        # Using existing headers since we've added Content-Type already
         response = requests.patch(update_url, headers=headers, json=update_payload)
         
-        # Log the response details
+        # Log the complete response details
         logger.info(f"Update response status code: {response.status_code}")
+        try:
+            response_data = response.json()
+            logger.info(f"Update response body: {json.dumps(response_data)}")
+        except:
+            logger.info(f"Update response body: {response.text[:200]}...")
         
         if response.status_code >= 200 and response.status_code < 300:
             logger.info(f"✓ Successfully updated role {role_id} status to '{new_status}'")
+            
+            # Verify the update
+            verify_response = requests.get(fetch_url, headers=headers)
+            if verify_response.status_code == 200:
+                verify_data = verify_response.json()
+                current_status = verify_data.get("Status")
+                logger.info(f"Verification - Current status: {current_status}")
+                if current_status == new_status:
+                    logger.info("✓ Verification successful - Status was updated correctly")
+                else:
+                    logger.warning(f"⚠ Verification failed - Expected status '{new_status}' but found '{current_status}'")
+            
             return True
         else:
             logger.error(f"✗ Failed to update role {role_id} status. Status code: {response.status_code}")
@@ -654,29 +685,60 @@ def cv_uploader():
     """Webhook endpoint to trigger CV download and upload process."""
     logger.info("CV uploader webhook triggered")
     
-    # Get the request JSON data
-    request_data = request.json
-    logger.info(f"Received request data: {json.dumps(request_data)}")
+    # Get the request JSON data with full logging
+    try:
+        # Log raw request data for debugging
+        logger.info(f"Request content type: {request.content_type}")
+        logger.info(f"Request data: {request.data.decode('utf-8')}")
+        
+        # Parse JSON depending on how it's sent
+        if request.is_json:
+            request_data = request.json
+            logger.info("Parsed JSON data from request.json")
+        else:
+            # Try to parse as JSON if it's not automatically parsed
+            try:
+                request_data = json.loads(request.data.decode('utf-8'))
+                logger.info("Manually parsed JSON data")
+            except:
+                request_data = {}
+                logger.warning("Could not parse request data as JSON")
+        
+        # Log the parsed data
+        logger.info(f"Parsed request data: {json.dumps(request_data)}")
+    except Exception as e:
+        logger.error(f"Error processing request data: {str(e)}")
+        request_data = {}
     
     # Extract the Role ID from the request if it exists
     role_id = None
     if request_data and isinstance(request_data, dict):
-        role_id = request_data.get('Id')
-        if role_id:
-            logger.info(f"Extracted Role ID from request: {role_id}")
-        else:
-            logger.warning("No 'Id' field found in the request data")
+        # Try multiple possible field names
+        for field in ['Id', 'id', 'ID', 'role_id', 'roleId']:
+            if field in request_data:
+                role_id = str(request_data[field])  # Convert to string to handle various formats
+                logger.info(f"Extracted Role ID '{role_id}' from field '{field}'")
+                break
+                
+        if not role_id:
+            logger.warning("No ID field found in the request data")
+            logger.warning(f"Available fields: {list(request_data.keys())}")
     
     # Run the process
     result = process_cvs()
     
     # Update role status if we have a role ID
     if role_id:
+        logger.info(f"Attempting to update status for role ID: {role_id}")
         status_updated = update_role_status(role_id)
         result["role_id"] = role_id
         result["status_updated"] = status_updated
+    else:
+        logger.warning("No role ID found, skipping status update")
+        result["status_updated"] = False
     
     # Return response
+    logger.info(f"Returning result: {json.dumps(result)}")
     return jsonify(result)
 
 def main():
