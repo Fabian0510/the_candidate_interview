@@ -364,6 +364,14 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
                 # Add a small delay to avoid overwhelming the server
                 time.sleep(0.5)
     
+    # Log file paths for debugging
+    if downloaded_paths:
+        logger.info(f"Sample downloaded files:")
+        for i, path in enumerate(downloaded_paths[:5]):
+            logger.info(f"  - {path}")
+        if len(downloaded_paths) > 5:
+            logger.info(f"  - ...and {len(downloaded_paths) - 5} more")
+    
     # Log summary
     logger.info("=== Download Summary ===")
     logger.info(f"Total roles processed: {len(roles)}")
@@ -437,12 +445,12 @@ def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, fi
         logger.error(f"Error uploading to blob storage: {str(e)}")
         return None
 
-def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
+def upload_downloaded_files(downloaded_paths: List[str]) -> int:
     """
-    Upload all downloaded CV files to Azure Blob Storage.
+    Upload all downloaded files to Azure Blob Storage.
     
     Args:
-        downloaded_paths (List[str]): List of paths to downloaded CV files
+        downloaded_paths (List[str]): List of paths to downloaded files (CVs, JDs, AM Comments)
         
     Returns:
         int: Number of successfully uploaded files
@@ -450,24 +458,29 @@ def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
     successful_uploads = 0
     
     for file_path in downloaded_paths:
-        # Extract role information from directory structure 
-        # Expected path structure: /path/to/roleid_rolename/cvs/candidate_file.pdf
-        path_parts = file_path.split(os.sep)
-        
-        # Find the index of "cvs" directory in the path
         try:
-            cvs_index = path_parts.index("cvs")
-            if cvs_index <= 0:
-                logger.warning(f"Invalid path structure - 'cvs' is at the beginning: {file_path}")
-                continue
-                
+            # Extract role information from directory structure 
+            # Expected path structures: 
+            # - /path/to/roles/roleid_rolename/cvs/candidate_file.pdf
+            # - /path/to/roles/roleid_rolename/jd/job_description.pdf
+            # - /path/to/roles/roleid_rolename/jd/am_insight.txt
+            path_parts = file_path.split(os.sep)
+            
             # Check if "roles" is in the path
             if "roles" not in path_parts:
                 logger.warning(f"Path does not contain 'roles' directory: {file_path}")
                 continue
+            
+            # Find the index of "roles" directory
+            roles_index = path_parts.index("roles")
+            
+            # Role directory should be right after "roles"
+            if roles_index + 1 >= len(path_parts):
+                logger.warning(f"Invalid path structure - no directory after 'roles': {file_path}")
+                continue
                 
-            # Role directory is one level above "cvs"
-            role_dir_name = path_parts[cvs_index - 1]
+            # Get the role directory name
+            role_dir_name = path_parts[roles_index + 1]
             
             # Split role directory into ID and name (format: roleid_rolename)
             role_parts = role_dir_name.split('_', 1)
@@ -478,17 +491,18 @@ def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
             role_id = role_parts[0]
             role_name = role_parts[1]
             
-            # Get the CV filename
-            cv_filename = os.path.basename(file_path)
+            # Get the filename
+            filename = os.path.basename(file_path)
             
             # Upload the file
-            blob_path = upload_file_to_blob_storage(file_path, role_id, role_name, cv_filename)
+            blob_path = upload_file_to_blob_storage(file_path, role_id, role_name, filename)
             
             if blob_path:
                 successful_uploads += 1
+                logger.info(f"Successfully uploaded {file_path} to Azure")
                 
-        except ValueError:
-            logger.warning(f"Path does not contain 'cvs' directory: {file_path}")
+        except Exception as e:
+            logger.error(f"Error processing file for upload: {file_path}, Error: {str(e)}")
             continue
     
     return successful_uploads
@@ -505,7 +519,7 @@ def process_cvs():
     
     # Upload all files
     logger.info("Starting upload process...")
-    uploaded_files = upload_downloaded_cvs(downloaded_paths)
+    uploaded_files = upload_downloaded_files(downloaded_paths)
     
     # Log final summary
     logger.info("=== Process Summary ===")
