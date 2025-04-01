@@ -606,47 +606,83 @@ def process_cvs():
 # Create Flask app
 app = Flask(__name__)
 
-def update_role_status(role_id: str, new_status: str = "Generating Questions") -> bool:
+def update_role_status(role_id, new_status: str = "Generating Questions") -> bool:
     """
     Update a role's status using the API.
     
     Args:
-        role_id (str): The ID of the role to update
+        role_id: The ID of the role to update (integer or string)
         new_status (str): The new status to set
         
     Returns:
         bool: True if the update was successful, False otherwise
     """
     try:
-        # First fetch the current role details to ensure we're updating the correct record
-        fetch_url = f"{BASE_API_URL}/tables/mgwvuug18vkrhg0/records/{role_id}"
-        logger.info(f"Fetching role details for ID: {role_id}")
+        # Ensure role_id is an integer if possible
+        try:
+            # First try to convert to integer if it's a string of digits
+            if isinstance(role_id, str) and role_id.isdigit():
+                role_id = int(role_id)
+                logger.info(f"Converted role_id to integer: {role_id}")
+        except ValueError:
+            # If conversion fails, keep it as is
+            logger.info(f"Could not convert role_id to integer, using as is: {role_id}")
         
-        fetch_response = requests.get(fetch_url, headers=headers)
-        if fetch_response.status_code != 200:
-            logger.error(f"Failed to fetch role details. Status code: {fetch_response.status_code}")
-            logger.error(f"Error response: {fetch_response.text}")
-            return False
-            
-        role_data = fetch_response.json()
-        logger.info(f"Current role data: {json.dumps(role_data)}")
+        # API endpoint for getting and updating roles
+        roles_table_url = f"{BASE_API_URL}/tables/mgwvuug18vkrhg0/records"
         
-        # API endpoint for updating a role
-        update_url = f"{BASE_API_URL}/tables/mgwvuug18vkrhg0/records"
+        # For specific record URL
+        record_url = f"{roles_table_url}/{role_id}"
         
-        # Prepare the update payload - only include the ID and Status fields
+        logger.info(f"Using record URL: {record_url}")
+        
+        # First check if the role exists with this ID
+        try:
+            fetch_response = requests.get(record_url, headers=headers)
+            if fetch_response.status_code == 200:
+                role_data = fetch_response.json()
+                current_status = role_data.get("Status", "Unknown")
+                logger.info(f"Found role with ID {role_id}, current status: {current_status}")
+            elif fetch_response.status_code == 404:
+                logger.error(f"Role with ID {role_id} not found (404)")
+                
+                # Try to list all roles to see if we can find a match by ID
+                list_response = requests.get(roles_table_url, headers=headers)
+                if list_response.status_code == 200:
+                    roles_data = list_response.json()
+                    roles_list = roles_data.get('list', [])
+                    logger.info(f"Retrieved {len(roles_list)} roles, looking for matching ID")
+                    
+                    # Log the first few role IDs for debugging
+                    sample_ids = [role.get('Id') for role in roles_list[:5] if 'Id' in role]
+                    logger.info(f"Sample role IDs in system: {sample_ids}")
+                    
+                    for role in roles_list:
+                        if 'Id' in role and str(role['Id']) == str(role_id):
+                            logger.info(f"Found matching role by string comparison: {role['Id']}")
+                            role_id = role['Id']  # Use the exact ID format from the API
+                            break
+                            
+                return False
+            else:
+                logger.error(f"Failed to fetch role details. Status code: {fetch_response.status_code}")
+                logger.error(f"Error response: {fetch_response.text}")
+                return False
+        except Exception as e:
+            logger.error(f"Error fetching role details: {str(e)}")
+        
+        # Prepare the update payload with the correct ID format
         update_payload = {
-            "Id": int(role_id) if role_id.isdigit() else role_id,  # Ensure ID is an integer if possible
+            "Id": role_id,  # Use the role_id as is (it may be integer or string)
             "Status": new_status
         }
         
         logger.info(f"Updating role {role_id} status to '{new_status}'")
-        logger.info(f"Update URL: {update_url}")
+        logger.info(f"Update URL: {roles_table_url}")
         logger.info(f"Update payload: {json.dumps(update_payload)}")
-        logger.info(f"Headers: {json.dumps(dict(headers))}")
         
         # Send PATCH request to update the role
-        response = requests.patch(update_url, headers=headers, json=update_payload)
+        response = requests.patch(roles_table_url, headers=headers, json=update_payload)
         
         # Log the complete response details
         logger.info(f"Update response status code: {response.status_code}")
@@ -660,7 +696,7 @@ def update_role_status(role_id: str, new_status: str = "Generating Questions") -
             logger.info(f"✓ Successfully updated role {role_id} status to '{new_status}'")
             
             # Verify the update
-            verify_response = requests.get(fetch_url, headers=headers)
+            verify_response = requests.get(record_url, headers=headers)
             if verify_response.status_code == 200:
                 verify_data = verify_response.json()
                 current_status = verify_data.get("Status")
@@ -716,9 +752,14 @@ def cv_uploader():
         # Try multiple possible field names
         for field in ['Id', 'id', 'ID', 'role_id', 'roleId']:
             if field in request_data:
-                role_id = str(request_data[field])  # Convert to string to handle various formats
-                logger.info(f"Extracted Role ID '{role_id}' from field '{field}'")
+                role_id = request_data[field]  # Keep original type (integer or string)
+                logger.info(f"Extracted Role ID '{role_id}' (type: {type(role_id).__name__}) from field '{field}'")
                 break
+                
+        # Special handling for UUID-like strings - we might need to extract the numeric part
+        if isinstance(role_id, str) and '-' in role_id and not role_id.isdigit():
+            logger.warning(f"Received UUID-like role_id: {role_id}, this may not be the correct format")
+            logger.warning("Will attempt to process, but this may fail")
                 
         if not role_id:
             logger.warning("No ID field found in the request data")
