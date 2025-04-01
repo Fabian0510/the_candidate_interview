@@ -35,7 +35,8 @@ TOKEN = 'EgEls5yPpzOqhGdtL1CDcZkNolXhQhIFfwd4DIe0'
 # API configuration
 headers = {
     'accept': 'application/json',
-    'xc-token': TOKEN
+    'xc-token': TOKEN,
+    'Content-Type': 'application/json'  # Add Content-Type for PATCH requests
 }
 
 # Base URLs
@@ -605,13 +606,75 @@ def process_cvs():
 # Create Flask app
 app = Flask(__name__)
 
+def update_role_status(role_id: str, new_status: str = "Generating Questions") -> bool:
+    """
+    Update a role's status using the API.
+    
+    Args:
+        role_id (str): The ID of the role to update
+        new_status (str): The new status to set
+        
+    Returns:
+        bool: True if the update was successful, False otherwise
+    """
+    try:
+        # API endpoint for updating a role
+        update_url = jobs_url
+        
+        # Prepare the update payload
+        update_payload = {
+            "Id": role_id,
+            "Status": new_status
+        }
+        
+        logger.info(f"Updating role {role_id} status to '{new_status}'")
+        logger.info(f"Update payload: {json.dumps(update_payload)}")
+        
+        # Send PATCH request to update the role
+        # Using existing headers since we've added Content-Type already
+        response = requests.patch(update_url, headers=headers, json=update_payload)
+        
+        # Log the response details
+        logger.info(f"Update response status code: {response.status_code}")
+        
+        if response.status_code >= 200 and response.status_code < 300:
+            logger.info(f"✓ Successfully updated role {role_id} status to '{new_status}'")
+            return True
+        else:
+            logger.error(f"✗ Failed to update role {role_id} status. Status code: {response.status_code}")
+            logger.error(f"Error response: {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error updating role status: {str(e)}")
+        return False
+
 @app.route('/cv_uploader', methods=['POST'])
 def cv_uploader():
     """Webhook endpoint to trigger CV download and upload process."""
     logger.info("CV uploader webhook triggered")
     
+    # Get the request JSON data
+    request_data = request.json
+    logger.info(f"Received request data: {json.dumps(request_data)}")
+    
+    # Extract the Role ID from the request if it exists
+    role_id = None
+    if request_data and isinstance(request_data, dict):
+        role_id = request_data.get('Id')
+        if role_id:
+            logger.info(f"Extracted Role ID from request: {role_id}")
+        else:
+            logger.warning("No 'Id' field found in the request data")
+    
     # Run the process
     result = process_cvs()
+    
+    # Update role status if we have a role ID
+    if role_id:
+        status_updated = update_role_status(role_id)
+        result["role_id"] = role_id
+        result["status_updated"] = status_updated
     
     # Return response
     return jsonify(result)
