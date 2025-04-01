@@ -149,14 +149,14 @@ def sanitize_filename(filename: str) -> str:
     filename = filename.replace(' ', '_')
     return filename
 
-def save_am_comments_to_file(role_id: str, role_title: str, comments: str) -> str:
+def save_am_comments_to_file(role_id: str, role_title: str, comments) -> str:
     """
     Save AM Comments to a text file in the jd directory.
     
     Args:
         role_id (str): ID of the role
         role_title (str): Title of the role
-        comments (str): AM Comments to save
+        comments: AM Comments to save (any type, will be converted to string)
         
     Returns:
         str: Path to the saved file
@@ -178,62 +178,107 @@ def save_am_comments_to_file(role_id: str, role_title: str, comments: str) -> st
     # Create output file path
     output_path = os.path.join(jd_dir_path, "am_insight.txt")
     
-    # Write comments to file
-    with open(output_path, 'w') as f:
-        f.write(comments)
-    
-    logger.info(f"Saved AM Comments to {output_path}")
-    return output_path
+    # Convert comments to string and write to file
+    try:
+        # Handle various types that might come from the API
+        if comments is None:
+            comments_str = "No AM comments available"
+        elif isinstance(comments, (dict, list)):
+            comments_str = json.dumps(comments, indent=2)
+        else:
+            comments_str = str(comments)
+            
+        # Write to file
+        with open(output_path, 'w') as f:
+            f.write(comments_str)
+        
+        logger.info(f"Saved AM Comments to {output_path}")
+        return output_path
+    except Exception as e:
+        logger.error(f"Error saving AM Comments: {str(e)}")
+        logger.error(f"Comments type: {type(comments)}")
+        # Create empty file to avoid future issues
+        with open(output_path, 'w') as f:
+            f.write("Error processing AM Comments")
+        return output_path
 
-def download_job_description(jd_file: Dict, role_id: str, role_title: str) -> str:
+def download_job_description(jd_file, role_id: str, role_title: str) -> str:
     """
     Download Job Description PDF file and save it to the jd directory.
     
     Args:
-        jd_file (Dict): Job Description file information
+        jd_file: Job Description file information (dict or other type)
         role_id (str): ID of the role
         role_title (str): Title of the role
         
     Returns:
-        str: Path to the downloaded file
+        str: Path to the downloaded file or None if failed
     """
-    # Create a top-level "roles" directory
-    base_dir = os.path.join(os.getcwd(), "roles")
-    
-    # Sanitize role name for directory creation
-    sanitized_role_title = sanitize_filename(role_title)
-    role_dir_name = f"{role_id}_{sanitized_role_title}"
-    
-    # Create role directory structure with jd subdirectory
-    role_dir_path = os.path.join(base_dir, role_dir_name)
-    jd_dir_path = os.path.join(role_dir_path, "jd")
-    
-    # Create directory structure if it doesn't exist
-    os.makedirs(jd_dir_path, exist_ok=True)
-    
-    # Extract file info
-    file_path = jd_file.get("path")
-    file_title = jd_file.get("title", "job_description.pdf")
-    
-    if not file_path:
-        logger.warning(f"No path found for Job Description file")
+    try:
+        # Check if jd_file is a dictionary
+        if not isinstance(jd_file, dict):
+            logger.warning(f"Job Description file is not a dictionary: {type(jd_file)}")
+            # If not a dict, create an empty JD file with error message
+            base_dir = os.path.join(os.getcwd(), "roles")
+            sanitized_role_title = sanitize_filename(role_title)
+            role_dir_name = f"{role_id}_{sanitized_role_title}"
+            role_dir_path = os.path.join(base_dir, role_dir_name)
+            jd_dir_path = os.path.join(role_dir_path, "jd")
+            os.makedirs(jd_dir_path, exist_ok=True)
+            output_path = os.path.join(jd_dir_path, "jd_error.txt")
+            
+            with open(output_path, 'w') as f:
+                f.write(f"Error: Job Description is not in expected format. Type: {type(jd_file)}\n")
+                f.write(f"Value: {str(jd_file)}")
+            
+            logger.info(f"Created error file for Job Description: {output_path}")
+            return output_path
+            
+        # Create a top-level "roles" directory
+        base_dir = os.path.join(os.getcwd(), "roles")
+        
+        # Sanitize role name for directory creation
+        sanitized_role_title = sanitize_filename(role_title)
+        role_dir_name = f"{role_id}_{sanitized_role_title}"
+        
+        # Create role directory structure with jd subdirectory
+        role_dir_path = os.path.join(base_dir, role_dir_name)
+        jd_dir_path = os.path.join(role_dir_path, "jd")
+        
+        # Create directory structure if it doesn't exist
+        os.makedirs(jd_dir_path, exist_ok=True)
+        
+        # Extract file info with thorough error checking
+        file_path = jd_file.get("path")
+        if not file_path:
+            logger.warning(f"No path found for Job Description file: {jd_file}")
+            return None
+            
+        # Get file title with a default and sanitize it
+        file_title = jd_file.get("title", "job_description.pdf")
+        file_title = sanitize_filename(file_title)
+        
+        # Create full download URL
+        download_url = f"{BASE_URL}/{file_path}"
+        
+        # Create output file path
+        output_path = os.path.join(jd_dir_path, file_title)
+        
+        # Download the file
+        logger.info(f"Downloading Job Description: {file_title}")
+        success = download_cv(download_url, output_path)
+        
+        if success:
+            logger.info(f"Successfully downloaded Job Description to {output_path}")
+            return output_path
+        else:
+            logger.warning(f"Failed to download Job Description: {file_title}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error in download_job_description: {str(e)}")
+        logger.error(f"Job Description file data: {str(jd_file)[:200]}...")
         return None
-    
-    # Create full download URL
-    download_url = f"{BASE_URL}/{file_path}"
-    
-    # Create output file path
-    output_path = os.path.join(jd_dir_path, file_title)
-    
-    # Download the file
-    logger.info(f"Downloading Job Description: {file_title}")
-    success = download_cv(download_url, output_path)
-    
-    if success:
-        logger.info(f"Successfully downloaded Job Description to {output_path}")
-        return output_path
-    
-    return None
 
 def process_roles_and_cvs() -> Tuple[int, List[str]]:
     """
@@ -282,29 +327,53 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
         logger.info(f"Processing role: {role_title} (ID: {role_id}) for client: {client}")
         
         # Process AM Comments
-        am_comments = role.get("AM Comments")
-        if am_comments:
-            logger.info(f"Found AM Comments for role: {role_title}")
+        try:
+            am_comments = role.get("AM Comments")
+            # Process even if None or empty - our function will handle this
+            logger.info(f"Processing AM Comments for role: {role_title}")
             am_comments_path = save_am_comments_to_file(role_id, role_title, am_comments)
             if am_comments_path:
                 downloaded_paths.append(am_comments_path)
+                logger.info(f"AM Comments file created at: {am_comments_path}")
+        except Exception as e:
+            logger.error(f"Error processing AM Comments for role {role_title}: {str(e)}")
                 
         # Process Job Description PDF
-        jd_files = role.get("JobDescription (PDF)")
-        if jd_files:
-            if isinstance(jd_files, list):
-                # Process each JD file if it's a list
-                for jd_file in jd_files:
-                    jd_path = download_job_description(jd_file, role_id, role_title)
+        try:
+            jd_files = role.get("JobDescription (PDF)")
+            if jd_files:
+                logger.info(f"Found Job Description files for role: {role_title}")
+                
+                if isinstance(jd_files, list):
+                    # Process each JD file if it's a list
+                    logger.info(f"Processing {len(jd_files)} Job Description files")
+                    for jd_file in jd_files:
+                        try:
+                            jd_path = download_job_description(jd_file, role_id, role_title)
+                            if jd_path:
+                                downloaded_paths.append(jd_path)
+                                downloaded_jds += 1
+                                logger.info(f"Downloaded Job Description to: {jd_path}")
+                        except Exception as jd_err:
+                            logger.error(f"Error downloading a Job Description file: {str(jd_err)}")
+                
+                elif isinstance(jd_files, dict):
+                    # Process a single JD file
+                    logger.info("Processing single Job Description file")
+                    jd_path = download_job_description(jd_files, role_id, role_title)
                     if jd_path:
                         downloaded_paths.append(jd_path)
                         downloaded_jds += 1
-            elif isinstance(jd_files, dict):
-                # Process a single JD file
-                jd_path = download_job_description(jd_files, role_id, role_title)
-                if jd_path:
-                    downloaded_paths.append(jd_path)
-                    downloaded_jds += 1
+                        logger.info(f"Downloaded Job Description to: {jd_path}")
+                        
+                else:
+                    # Handle unexpected types
+                    logger.warning(f"Unexpected Job Description data type: {type(jd_files)}")
+                    logger.warning(f"Job Description data: {jd_files}")
+            else:
+                logger.info(f"No Job Description files found for role: {role_title}")
+        except Exception as e:
+            logger.error(f"Error processing Job Description files for role {role_title}: {str(e)}")
         
         # Get CV relations for this role
         cv_relations = role.get("nc_92rx___nc_m2m_JobDescription_CVs", [])
