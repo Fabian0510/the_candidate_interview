@@ -13,6 +13,7 @@ import logging
 import time
 import json
 import toml
+import traceback
 from datetime import datetime
 from azure.storage.blob import BlobServiceClient
 from typing import Dict, Any, List, Tuple
@@ -606,126 +607,382 @@ def process_cvs():
 # Create Flask app
 app = Flask(__name__)
 
-def update_role_status(role_id, new_status: str = "Generating Questions") -> bool:
+def find_job_by_uuid(uuid_string):
+    """
+    Find the correct job/role ID from a UUID string by querying all jobs.
+    
+    This function uses multiple strategies to match a UUID to a job:
+    1. Exact UUID match in any field
+    2. Partial UUID match in any field
+    3. Match by XC record ID (if UUID contains record path)
+    4. Direct numeric ID comparison
+    
+    Args:
+        uuid_string: The UUID string that might be a job identifier
+        
+    Returns:
+        dict: Job record if found, None otherwise
+    """
+    try:
+        uuid_string = str(uuid_string).strip()
+        logger.info(f"Searching for job with UUID reference: {uuid_string}")
+        
+        # Clean up the UUID string if it contains extra characters
+        # Remove any surrounding quotes or whitespace
+        clean_uuid = uuid_string.strip('"\'').strip()
+        logger.info(f"Using cleaned UUID for search: {clean_uuid}")
+        
+        # Fetch all jobs with a larger limit to ensure we get all available jobs
+        fetch_response = requests.get(jobs_url, headers=headers, params={'limit': 500})
+        if fetch_response.status_code != 200:
+            logger.error(f"Failed to fetch jobs. Status code: {fetch_response.status_code}")
+            return None
+            
+        jobs_data = fetch_response.json()
+        
+        # Log response structure for debugging
+        logger.info(f"API response structure - top level keys: {list(jobs_data.keys())}")
+        
+        jobs_list = jobs_data.get('list', [])
+        logger.info(f"Retrieved {len(jobs_list)} jobs, searching for a match")
+        
+        # Log available fields in the first job for debugging
+        if jobs_list:
+            first_job = jobs_list[0]
+            logger.info(f"Sample job fields: {list(first_job.keys())}")
+            
+            # Check job ID field specifically
+            job_id = first_job.get('Id')
+            logger.info(f"Sample job ID field ('Id'): {job_id} (type: {type(job_id).__name__})")
+            
+            # Check for status field
+            status_field = first_job.get('Status')
+            logger.info(f"Sample job Status field ('Status'): {status_field}")
+            
+        # Log the first few jobs for debugging
+        for i, job in enumerate(jobs_list[:3]):
+            logger.info(f"Sample job {i+1}: Id={job.get('Id')}, Title={job.get('Job Title')}")
+        
+        # ----- STRATEGY 1: Direct field matching -----
+        logger.info("Strategy 1: Searching for exact UUID match in any field")
+        for job in jobs_list:
+            # Check for UUID in any string field
+            for field, value in job.items():
+                if isinstance(value, str) and clean_uuid in value:
+                    logger.info(f"FOUND! UUID match in field '{field}': {value}")
+                    logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                    return job
+        
+        # ----- STRATEGY 2: String representation matching -----
+        logger.info("Strategy 2: Searching in JSON string representation")
+        for job in jobs_list:
+            # Convert entire job to JSON string and search in it
+            job_str = json.dumps(job)
+            if clean_uuid in job_str:
+                logger.info(f"FOUND! UUID in job JSON string representation")
+                logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                return job
+        
+        # ----- STRATEGY 3: Record ID extraction -----
+        logger.info("Strategy 3: Attempting to extract record ID from UUID")
+        # First check if this is a URL or path containing /record/
+        if '/record/' in clean_uuid:
+            parts = clean_uuid.split('/record/')
+            if len(parts) > 1:
+                record_id = parts[1].split('/')[0]
+                logger.info(f"Extracted record ID from URL path: {record_id}")
+                
+                # Now search for this ID in jobs
+                for job in jobs_list:
+                    job_id = str(job.get('Id', ''))
+                    if job_id == record_id:
+                        logger.info(f"FOUND! Matched job by record ID: {record_id}")
+                        logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                        return job
+        
+        # ----- STRATEGY 4: Special case for dashed UUIDs -----
+        logger.info("Strategy 4: Special UUID processing")
+        if '-' in clean_uuid:
+            # If UUID contains dashes, try checking for matching string with and without dashes
+            uuid_no_dashes = clean_uuid.replace('-', '')
+            logger.info(f"Looking for UUID without dashes: {uuid_no_dashes}")
+            
+            for job in jobs_list:
+                # Check if any field contains this UUID with or without dashes
+                for field, value in job.items():
+                    if isinstance(value, str):
+                        # Check with dashes
+                        if clean_uuid in value:
+                            logger.info(f"FOUND! UUID with dashes match in field '{field}': {value}")
+                            logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                            return job
+                        
+                        # Check without dashes
+                        if uuid_no_dashes in value.replace('-', ''):
+                            logger.info(f"FOUND! UUID without dashes match in field '{field}': {value}")
+                            logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                            return job
+                
+                # Try matching job ID
+                job_id = str(job.get('Id', ''))
+                if clean_uuid == job_id or uuid_no_dashes == job_id:
+                    logger.info(f"FOUND! UUID matches job ID directly")
+                    logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                    return job
+        
+        # ----- STRATEGY 5: Last resort - look for UUID fragments -----
+        logger.info("Strategy 5: Looking for UUID fragments in jobs")
+        uuid_fragments = clean_uuid.split('-')
+        if len(uuid_fragments) > 1:
+            for fragment in uuid_fragments:
+                if len(fragment) >= 4:  # Only use fragments of reasonable length
+                    logger.info(f"Searching for UUID fragment: {fragment}")
+                    for job in jobs_list:
+                        job_str = json.dumps(job)
+                        if fragment in job_str:
+                            logger.info(f"FOUND! UUID fragment '{fragment}' found in job")
+                            logger.info(f"Matched job: Id={job.get('Id')}, Title={job.get('Job Title')}")
+                            return job
+        
+        logger.warning(f"No job found matching UUID: {clean_uuid} - tried multiple strategies")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error searching for job by UUID: {str(e)}")
+        logger.error(f"Stack trace: {traceback.format_exc()}")
+        return None
+
+def update_role_status(role_id_or_uuid, new_status: str = "Generating Questions") -> bool:
     """
     Update a role's status using the API.
     
+    This function handles different ID formats:
+    1. UUID strings like "1a4129c2-535c-4d97-8cdb-513d9400ad72"
+    2. Integer IDs like 12345
+    3. String IDs like "12345"
+    
     Args:
-        role_id: The ID of the role to update (integer or string)
+        role_id_or_uuid: The ID or UUID reference of the role to update
         new_status (str): The new status to set
         
     Returns:
         bool: True if the update was successful, False otherwise
     """
     try:
-        # Ensure role_id is an integer if possible
-        try:
-            # First try to convert to integer if it's a string of digits
-            if isinstance(role_id, str) and role_id.isdigit():
-                role_id = int(role_id)
-                logger.info(f"Converted role_id to integer: {role_id}")
-        except ValueError:
-            # If conversion fails, keep it as is
-            logger.info(f"Could not convert role_id to integer, using as is: {role_id}")
+        # Convert to string and clean up the input
+        role_id_or_uuid = str(role_id_or_uuid).strip()
+        logger.info(f"Starting role status update process for: {role_id_or_uuid}")
         
-        # API endpoint for getting and updating roles
-        roles_table_url = f"{BASE_API_URL}/tables/mgwvuug18vkrhg0/records"
+        # Determine if this is a UUID or a direct ID
+        is_uuid_format = '-' in role_id_or_uuid
+        job = None
+        job_id = None
         
-        # For specific record URL
-        record_url = f"{roles_table_url}/{role_id}"
-        
-        logger.info(f"Using record URL: {record_url}")
-        
-        # First check if the role exists with this ID
-        try:
-            fetch_response = requests.get(record_url, headers=headers)
-            if fetch_response.status_code == 200:
-                role_data = fetch_response.json()
-                current_status = role_data.get("Status", "Unknown")
-                logger.info(f"Found role with ID {role_id}, current status: {current_status}")
-            elif fetch_response.status_code == 404:
-                logger.error(f"Role with ID {role_id} not found (404)")
+        if is_uuid_format:
+            # UUID processing path
+            logger.info(f"Input appears to be a UUID format: {role_id_or_uuid}")
+            job = find_job_by_uuid(role_id_or_uuid)
+            
+            if job:
+                # Get the correct ID to use for the API
+                job_id = job.get('Id')
+                logger.info(f"Found matching job with ID: {job_id} (type: {type(job_id).__name__})")
                 
-                # Try to list all roles to see if we can find a match by ID
-                list_response = requests.get(roles_table_url, headers=headers)
-                if list_response.status_code == 200:
-                    roles_data = list_response.json()
-                    roles_list = roles_data.get('list', [])
-                    logger.info(f"Retrieved {len(roles_list)} roles, looking for matching ID")
-                    
-                    # Log the first few role IDs for debugging
-                    sample_ids = [role.get('Id') for role in roles_list[:5] if 'Id' in role]
-                    logger.info(f"Sample role IDs in system: {sample_ids}")
-                    
-                    for role in roles_list:
-                        if 'Id' in role and str(role['Id']) == str(role_id):
-                            logger.info(f"Found matching role by string comparison: {role['Id']}")
-                            role_id = role['Id']  # Use the exact ID format from the API
-                            break
-                            
-                return False
+                # Get current status for logging
+                current_status = job.get('Status', 'Unknown')
+                logger.info(f"Current status: {current_status}")
             else:
-                logger.error(f"Failed to fetch role details. Status code: {fetch_response.status_code}")
-                logger.error(f"Error response: {fetch_response.text}")
-                return False
-        except Exception as e:
-            logger.error(f"Error fetching role details: {str(e)}")
+                # Last resort - try using the UUID directly
+                logger.error(f"Could not find job matching UUID: {role_id_or_uuid}")
+                logger.info(f"Will attempt to use UUID directly as a fallback")
+                job_id = role_id_or_uuid
+                current_status = "Unknown"
+        else:
+            # Direct ID processing path
+            logger.info(f"Input appears to be a direct ID: {role_id_or_uuid}")
+            
+            # Try to convert to integer if it's a numeric string
+            direct_id = role_id_or_uuid
+            if role_id_or_uuid.isdigit():
+                direct_id = int(role_id_or_uuid)
+                logger.info(f"Converted string ID to integer: {direct_id}")
+            
+            # Verify the job exists using the direct ID
+            fetch_url = f"{jobs_url}/{direct_id}"
+            logger.info(f"Verifying job existence at: {fetch_url}")
+            
+            fetch_response = requests.get(fetch_url, headers=headers)
+            
+            if fetch_response.status_code == 200:
+                # Job exists, use its data
+                job = fetch_response.json()
+                job_id = job.get('Id')  # Use the ID from the response
+                current_status = job.get('Status', 'Unknown')
+                logger.info(f"Verified job ID: {job_id}, current status: {current_status}")
+            else:
+                # Job doesn't exist by direct ID, try UUID lookup as fallback
+                logger.warning(f"Failed to verify job ID {direct_id}. Status: {fetch_response.status_code}")
+                logger.warning(f"Trying UUID lookup as fallback...")
+                
+                job = find_job_by_uuid(role_id_or_uuid)
+                if job:
+                    job_id = job.get('Id')
+                    current_status = job.get('Status', 'Unknown')
+                    logger.info(f"Found job via UUID lookup: {job_id}, status: {current_status}")
+                else:
+                    # Last resort - use the original ID
+                    logger.error(f"Could not find job by any method, using original ID as fallback")
+                    job_id = direct_id
+                    current_status = "Unknown"
         
-        # Prepare the update payload with the correct ID format
+        if job_id is None:
+            logger.error("Failed to determine job ID after multiple attempts")
+            return False
+            
+        # Add additional logging for job ID type
+        logger.info(f"Using job ID: {job_id} (type: {type(job_id).__name__})")
+        
+        # Try to convert the job_id to the format expected by the API
+        # The API might expect a specific format (string/int)
+        try:
+            # Try to convert to integer if it's a numeric string
+            if isinstance(job_id, str) and job_id.isdigit():
+                numeric_job_id = int(job_id)
+                logger.info(f"Using numeric ID for API call: {numeric_job_id}")
+                api_job_id = numeric_job_id
+            else:
+                # Keep as is
+                api_job_id = job_id
+                logger.info(f"Using original ID format for API call: {api_job_id}")
+        except Exception as conv_err:
+            logger.warning(f"Error converting job ID: {conv_err}")
+            api_job_id = job_id  # Use original as fallback
+        
+        # Prepare the update payload - use exactly "Id" as the key (API is case-sensitive)
         update_payload = {
-            "Id": role_id,  # Use the role_id as is (it may be integer or string)
+            "Id": api_job_id,  # Must use this exact case "Id" for API
             "Status": new_status
         }
         
-        logger.info(f"Updating role {role_id} status to '{new_status}'")
-        logger.info(f"Update URL: {roles_table_url}")
+        # Log the update details
+        logger.info(f"Updating job {api_job_id} status from '{current_status}' to '{new_status}'")
+        logger.info(f"Update URL: {jobs_url}")
         logger.info(f"Update payload: {json.dumps(update_payload)}")
         
-        # Send PATCH request to update the role
-        response = requests.patch(roles_table_url, headers=headers, json=update_payload)
+        # Send PATCH request to update the job
+        update_headers = headers.copy()
+        update_headers['Content-Type'] = 'application/json'
         
-        # Log the complete response details
+        # Try the update
+        response = requests.patch(jobs_url, headers=update_headers, json=update_payload)
+        
+        # Log the response
         logger.info(f"Update response status code: {response.status_code}")
-        try:
-            response_data = response.json()
-            logger.info(f"Update response body: {json.dumps(response_data)}")
-        except:
-            logger.info(f"Update response body: {response.text[:200]}...")
+        response_text = response.text
+        logger.info(f"Update response: {response_text[:200]}...")
         
         if response.status_code >= 200 and response.status_code < 300:
-            logger.info(f"✓ Successfully updated role {role_id} status to '{new_status}'")
+            logger.info(f"✓ Successfully updated job {api_job_id} status to '{new_status}'")
             
             # Verify the update
-            verify_response = requests.get(record_url, headers=headers)
+            verify_url = f"{jobs_url}/{api_job_id}"
+            verify_response = requests.get(verify_url, headers=headers)
+            
             if verify_response.status_code == 200:
                 verify_data = verify_response.json()
-                current_status = verify_data.get("Status")
-                logger.info(f"Verification - Current status: {current_status}")
-                if current_status == new_status:
+                new_status_value = verify_data.get("Status")  # Use exact field name from API
+                
+                # Log the entire response for debugging
+                logger.info(f"Verification - Response data keys: {list(verify_data.keys())}")
+                logger.info(f"Verification - New status: {new_status_value}")
+                
+                if new_status_value == new_status:
                     logger.info("✓ Verification successful - Status was updated correctly")
                 else:
-                    logger.warning(f"⚠ Verification failed - Expected status '{new_status}' but found '{current_status}'")
+                    logger.warning(f"⚠ Verification failed - Expected '{new_status}' but found '{new_status_value}'")
+                    
+                    # Check if the status field is using a different case
+                    all_fields = verify_data.keys()
+                    status_fields = [f for f in all_fields if f.lower() == "status"]
+                    if status_fields and status_fields[0] != "Status":
+                        actual_status_field = status_fields[0]
+                        logger.warning(f"Status field in API response uses different case: '{actual_status_field}'")
+                        logger.warning(f"Value in '{actual_status_field}': {verify_data.get(actual_status_field)}")
             
             return True
         else:
-            logger.error(f"✗ Failed to update role {role_id} status. Status code: {response.status_code}")
-            logger.error(f"Error response: {response.text}")
+            logger.error(f"✗ Failed to update job status. Status code: {response.status_code}")
+            logger.error(f"Error response: {response_text}")
+            
+            # Try alternative format if first attempt failed
+            if isinstance(api_job_id, int):
+                # Try with string version
+                logger.info("First attempt with integer ID failed, trying with string ID...")
+                string_job_id = str(api_job_id)
+                
+                update_payload["Id"] = string_job_id
+                logger.info(f"Retrying with payload: {json.dumps(update_payload)}")
+                
+                retry_response = requests.patch(jobs_url, headers=update_headers, json=update_payload)
+                logger.info(f"Retry response status code: {retry_response.status_code}")
+                
+                if retry_response.status_code >= 200 and retry_response.status_code < 300:
+                    logger.info(f"✓ Retry successful! Updated job {string_job_id} status to '{new_status}'")
+                    return True
+            elif isinstance(api_job_id, str) and api_job_id.isdigit():
+                # Try with integer version
+                logger.info("First attempt with string ID failed, trying with integer ID...")
+                int_job_id = int(api_job_id)
+                
+                update_payload["Id"] = int_job_id
+                logger.info(f"Retrying with payload: {json.dumps(update_payload)}")
+                
+                retry_response = requests.patch(jobs_url, headers=update_headers, json=update_payload)
+                logger.info(f"Retry response status code: {retry_response.status_code}")
+                
+                if retry_response.status_code >= 200 and retry_response.status_code < 300:
+                    logger.info(f"✓ Retry successful! Updated job {int_job_id} status to '{new_status}'")
+                    return True
+            
             return False
             
     except Exception as e:
         logger.error(f"Error updating role status: {str(e)}")
+        logger.error(f"Stack trace: {traceback.format_exc()}")
         return False
 
 @app.route('/cv_uploader', methods=['POST'])
 def cv_uploader():
-    """Webhook endpoint to trigger CV download and upload process."""
-    logger.info("CV uploader webhook triggered")
+    """
+    Webhook endpoint to trigger CV download and upload process.
+    
+    This endpoint:
+    1. Receives webhook requests with role ID information
+    2. Downloads CVs, job descriptions, and AM comments
+    3. Uploads them to Azure blob storage
+    4. Updates the role status to "Generating Questions"
+    
+    Returns:
+        JSON response with operation result
+    """
+    logger.info("===== CV UPLOADER WEBHOOK TRIGGERED =====")
+    logger.info(f"Request received at: {datetime.now().isoformat()}")
     
     # Get the request JSON data with full logging
     try:
         # Log raw request data for debugging
-        logger.info(f"Request content type: {request.content_type}")
-        logger.info(f"Request data: {request.data.decode('utf-8')}")
+        content_type = request.content_type
+        logger.info(f"Request content type: {content_type}")
+        
+        raw_data = request.data.decode('utf-8') if request.data else ""
+        if len(raw_data) > 1000:
+            logger.info(f"Request data (truncated): {raw_data[:1000]}...")
+        else:
+            logger.info(f"Request data: {raw_data}")
+        
+        # Validate JSON content type
+        is_json_content = content_type and 'json' in content_type.lower()
+        logger.info(f"Content appears to be JSON: {is_json_content}")
         
         # Parse JSON depending on how it's sent
         if request.is_json:
@@ -734,38 +991,89 @@ def cv_uploader():
         else:
             # Try to parse as JSON if it's not automatically parsed
             try:
-                request_data = json.loads(request.data.decode('utf-8'))
+                request_data = json.loads(raw_data) if raw_data.strip() else {}
                 logger.info("Manually parsed JSON data")
-            except:
+            except json.JSONDecodeError as json_err:
+                logger.warning(f"Could not parse request data as JSON: {str(json_err)}")
                 request_data = {}
-                logger.warning("Could not parse request data as JSON")
         
-        # Log the parsed data
-        logger.info(f"Parsed request data: {json.dumps(request_data)}")
+        # Log the parsed data structure
+        if isinstance(request_data, dict):
+            top_level_keys = list(request_data.keys())
+            logger.info(f"Parsed request data structure - top level keys: {top_level_keys}")
+            # Log nested 'data' field if present
+            if 'data' in request_data and isinstance(request_data['data'], dict):
+                data_keys = list(request_data['data'].keys())
+                logger.info(f"Keys in 'data' field: {data_keys}")
+        else:
+            logger.info(f"Parsed request data type: {type(request_data).__name__}")
+            
     except Exception as e:
         logger.error(f"Error processing request data: {str(e)}")
+        logger.error(f"Stack trace: {traceback.format_exc()}")
         request_data = {}
     
-    # Extract the Role ID from the request if it exists
+    # Extract the Role ID from the request data with enhanced search
     role_id = None
-    if request_data and isinstance(request_data, dict):
-        # Try multiple possible field names
-        for field in ['Id', 'id', 'ID', 'role_id', 'roleId']:
-            if field in request_data:
-                role_id = request_data[field]  # Keep original type (integer or string)
-                logger.info(f"Extracted Role ID '{role_id}' (type: {type(role_id).__name__}) from field '{field}'")
-                break
-                
-        # Special handling for UUID-like strings - we might need to extract the numeric part
-        if isinstance(role_id, str) and '-' in role_id and not role_id.isdigit():
-            logger.warning(f"Received UUID-like role_id: {role_id}, this may not be the correct format")
-            logger.warning("Will attempt to process, but this may fail")
-                
-        if not role_id:
-            logger.warning("No ID field found in the request data")
-            logger.warning(f"Available fields: {list(request_data.keys())}")
+    id_source = None
     
-    # Run the process
+    def extract_id_from_dict(data_dict, parent_key=""):
+        """Helper function to recursively search for ID in nested dictionaries"""
+        nonlocal role_id, id_source
+        
+        if not isinstance(data_dict, dict):
+            return
+            
+        # Check for the exact "Id" field first (API uses this exact case)
+        if "Id" in data_dict:
+            candidate_id = data_dict["Id"]
+            logger.info(f"Found API-style 'Id' field with value '{candidate_id}' in '{parent_key}.Id' (type: {type(candidate_id).__name__})")
+            role_id = candidate_id
+            id_source = f"{parent_key}.Id"
+            # Since we found the exact key used by the API, prioritize this and return early
+            return
+            
+        # Check various other ID field names at this level (fallback)
+        id_field_names = ['id', 'ID', 'role_id', 'roleId', 'uuid', 'UUID', 'job_id', 'jobId']
+        for field in id_field_names:
+            if field in data_dict:
+                candidate_id = data_dict[field]
+                logger.info(f"Found potential ID '{candidate_id}' in field '{parent_key}.{field}' (type: {type(candidate_id).__name__})")
+                
+                # Only update if we don't have an ID yet or the new one looks more promising
+                if role_id is None:
+                    role_id = candidate_id
+                    id_source = f"{parent_key}.{field}"
+                # Prefer UUIDs for more specific matching
+                elif isinstance(candidate_id, str) and '-' in candidate_id:
+                    role_id = candidate_id
+                    id_source = f"{parent_key}.{field}"
+                    
+        # Recurse into nested dictionaries
+        for key, value in data_dict.items():
+            if isinstance(value, dict):
+                extract_id_from_dict(value, f"{parent_key}.{key}" if parent_key else key)
+            elif isinstance(value, list):
+                for i, item in enumerate(value):
+                    if isinstance(item, dict):
+                        extract_id_from_dict(item, f"{parent_key}.{key}[{i}]" if parent_key else f"{key}[{i}]")
+    
+    # Start the recursive search
+    if isinstance(request_data, dict):
+        extract_id_from_dict(request_data)
+    
+    # Log the result of ID extraction
+    if role_id:
+        logger.info(f"Extracted Role ID '{role_id}' from {id_source}")
+        
+        # Special handling for UUID-like strings
+        if isinstance(role_id, str) and '-' in role_id:
+            logger.info(f"Detected UUID format ID: {role_id}")
+    else:
+        logger.warning("No ID field found in the request data after deep search")
+    
+    # Run the process to download and upload files
+    logger.info("Starting CV download and upload process...")
     result = process_cvs()
     
     # Update role status if we have a role ID
@@ -774,26 +1082,78 @@ def cv_uploader():
         status_updated = update_role_status(role_id)
         result["role_id"] = role_id
         result["status_updated"] = status_updated
+        result["id_source"] = id_source
     else:
         logger.warning("No role ID found, skipping status update")
         result["status_updated"] = False
+        result["role_id"] = None
+    
+    # Add timestamp to result
+    result["timestamp"] = datetime.now().isoformat()
     
     # Return response
+    logger.info(f"Webhook processing complete. Result summary: success={result.get('success', False)}, status_updated={result.get('status_updated', False)}")
     logger.info(f"Returning result: {json.dumps(result)}")
+    logger.info("===== WEBHOOK PROCESSING COMPLETE =====")
     return jsonify(result)
 
 def main():
-    """Run the download and upload process as a standalone script."""
-    result = process_cvs()
-    return 0 if result["success"] else 1
+    """
+    Run the download and upload process as a standalone script.
+    
+    Can be invoked with arguments:
+    - No args: Run download and upload process
+    - --webhook: Run as Flask webhook server
+    - --status <role_id>: Update status for a specific role
+    """
+    import sys
+    import argparse
+    
+    # Configure command-line argument parser
+    parser = argparse.ArgumentParser(description='Download and Upload CVs from API to Azure Storage')
+    subparsers = parser.add_subparsers(dest='command', help='Command to run')
+    
+    # Add webhook command
+    webhook_parser = subparsers.add_parser('webhook', help='Run as webhook server')
+    webhook_parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', 8888)),
+                               help='Port to run webhook server on (default: 8888)')
+    webhook_parser.add_argument('--debug', action='store_true',
+                               help='Run Flask in debug mode')
+    
+    # Add status command
+    status_parser = subparsers.add_parser('status', help='Update status for a specific role')
+    status_parser.add_argument('role_id', type=str, help='Role ID to update')
+    status_parser.add_argument('--status', type=str, default="Generating Questions",
+                              help='New status value (default: "Generating Questions")')
+    
+    # Parse arguments
+    if len(sys.argv) > 1:
+        args = parser.parse_args()
+        
+        # Process based on command
+        if args.command == 'webhook':
+            logger.info(f"Starting webhook server on port {args.port}")
+            app.run(host='0.0.0.0', port=args.port, debug=args.debug)
+            return 0
+        elif args.command == 'status':
+            logger.info(f"Updating status for role ID: {args.role_id} to '{args.status}'")
+            success = update_role_status(args.role_id, args.status)
+            logger.info(f"Status update {'successful' if success else 'failed'}")
+            return 0 if success else 1
+    else:
+        # Default behavior - run download and upload process
+        logger.info("Running CV download and upload process")
+        result = process_cvs()
+        return 0 if result["success"] else 1
 
 if __name__ == "__main__":
-    # Check if running as script or as webhook
+    # Check if running as script or as webhook (legacy support)
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == '--webhook':
-        # Run as webhook
+        # Legacy webhook mode
         port = int(os.environ.get('PORT', 8888))
+        logger.info(f"Starting webhook server on port {port} (legacy mode)")
         app.run(host='0.0.0.0', port=port)
     else:
-        # Run as script
+        # Use new command-line interface
         exit(main())
