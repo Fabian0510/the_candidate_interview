@@ -149,12 +149,98 @@ def sanitize_filename(filename: str) -> str:
     filename = filename.replace(' ', '_')
     return filename
 
+def save_am_comments_to_file(role_id: str, role_title: str, comments: str) -> str:
+    """
+    Save AM Comments to a text file in the jd directory.
+    
+    Args:
+        role_id (str): ID of the role
+        role_title (str): Title of the role
+        comments (str): AM Comments to save
+        
+    Returns:
+        str: Path to the saved file
+    """
+    # Create a top-level "roles" directory
+    base_dir = os.path.join(os.getcwd(), "roles")
+    
+    # Sanitize role name for directory creation
+    sanitized_role_title = sanitize_filename(role_title)
+    role_dir_name = f"{role_id}_{sanitized_role_title}"
+    
+    # Create role directory structure with jd subdirectory
+    role_dir_path = os.path.join(base_dir, role_dir_name)
+    jd_dir_path = os.path.join(role_dir_path, "jd")
+    
+    # Create directory structure if it doesn't exist
+    os.makedirs(jd_dir_path, exist_ok=True)
+    
+    # Create output file path
+    output_path = os.path.join(jd_dir_path, "am_insight.txt")
+    
+    # Write comments to file
+    with open(output_path, 'w') as f:
+        f.write(comments)
+    
+    logger.info(f"Saved AM Comments to {output_path}")
+    return output_path
+
+def download_job_description(jd_file: Dict, role_id: str, role_title: str) -> str:
+    """
+    Download Job Description PDF file and save it to the jd directory.
+    
+    Args:
+        jd_file (Dict): Job Description file information
+        role_id (str): ID of the role
+        role_title (str): Title of the role
+        
+    Returns:
+        str: Path to the downloaded file
+    """
+    # Create a top-level "roles" directory
+    base_dir = os.path.join(os.getcwd(), "roles")
+    
+    # Sanitize role name for directory creation
+    sanitized_role_title = sanitize_filename(role_title)
+    role_dir_name = f"{role_id}_{sanitized_role_title}"
+    
+    # Create role directory structure with jd subdirectory
+    role_dir_path = os.path.join(base_dir, role_dir_name)
+    jd_dir_path = os.path.join(role_dir_path, "jd")
+    
+    # Create directory structure if it doesn't exist
+    os.makedirs(jd_dir_path, exist_ok=True)
+    
+    # Extract file info
+    file_path = jd_file.get("path")
+    file_title = jd_file.get("title", "job_description.pdf")
+    
+    if not file_path:
+        logger.warning(f"No path found for Job Description file")
+        return None
+    
+    # Create full download URL
+    download_url = f"{BASE_URL}/{file_path}"
+    
+    # Create output file path
+    output_path = os.path.join(jd_dir_path, file_title)
+    
+    # Download the file
+    logger.info(f"Downloading Job Description: {file_title}")
+    success = download_cv(download_url, output_path)
+    
+    if success:
+        logger.info(f"Successfully downloaded Job Description to {output_path}")
+        return output_path
+    
+    return None
+
 def process_roles_and_cvs() -> Tuple[int, List[str]]:
     """
-    Process all roles and download associated CVs.
+    Process all roles and download associated CVs, AM Comments, and Job Descriptions.
     
     Returns:
-        Tuple[int, List[str]]: Number of downloaded CVs and list of downloaded file paths
+        Tuple[int, List[str]]: Number of downloaded files and list of downloaded file paths
     """
     # Create a top-level "roles" directory for CVs
     base_dir = os.path.join(os.getcwd(), "roles")
@@ -167,6 +253,7 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     
     total_cvs = 0
     downloaded_cvs = 0
+    downloaded_jds = 0
     downloaded_paths = []
     
     # Process each role
@@ -184,13 +271,40 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
         # Create role directory structure with cvs subdirectory
         role_dir_path = os.path.join(base_dir, role_dir_name)
         cv_dir_path = os.path.join(role_dir_path, "cvs")
+        jd_dir_path = os.path.join(role_dir_path, "jd")
         
         # Create directory structure if it doesn't exist
         os.makedirs(cv_dir_path, exist_ok=True)
+        os.makedirs(jd_dir_path, exist_ok=True)
         
         # Log the role being processed
         client = role.get("Client", "No Client")
         logger.info(f"Processing role: {role_title} (ID: {role_id}) for client: {client}")
+        
+        # Process AM Comments
+        am_comments = role.get("AM Comments")
+        if am_comments:
+            logger.info(f"Found AM Comments for role: {role_title}")
+            am_comments_path = save_am_comments_to_file(role_id, role_title, am_comments)
+            if am_comments_path:
+                downloaded_paths.append(am_comments_path)
+                
+        # Process Job Description PDF
+        jd_files = role.get("JobDescription (PDF)")
+        if jd_files:
+            if isinstance(jd_files, list):
+                # Process each JD file if it's a list
+                for jd_file in jd_files:
+                    jd_path = download_job_description(jd_file, role_id, role_title)
+                    if jd_path:
+                        downloaded_paths.append(jd_path)
+                        downloaded_jds += 1
+            elif isinstance(jd_files, dict):
+                # Process a single JD file
+                jd_path = download_job_description(jd_files, role_id, role_title)
+                if jd_path:
+                    downloaded_paths.append(jd_path)
+                    downloaded_jds += 1
         
         # Get CV relations for this role
         cv_relations = role.get("nc_92rx___nc_m2m_JobDescription_CVs", [])
@@ -255,18 +369,23 @@ def process_roles_and_cvs() -> Tuple[int, List[str]]:
     logger.info(f"Total roles processed: {len(roles)}")
     logger.info(f"Total CVs found: {total_cvs}")
     logger.info(f"Total CVs successfully downloaded: {downloaded_cvs}")
+    logger.info(f"Total Job Descriptions downloaded: {downloaded_jds}")
+    logger.info(f"Total AM Comments files created: {len([p for p in downloaded_paths if p.endswith('am_insight.txt')])}")
     
-    return downloaded_cvs, downloaded_paths
+    total_files = downloaded_cvs + downloaded_jds + len([p for p in downloaded_paths if p.endswith('am_insight.txt')])
+    logger.info(f"Total files processed: {total_files}")
+    
+    return total_files, downloaded_paths
 
-def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, cv_filename: str = None) -> str:
+def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, filename: str = None) -> str:
     """
-    Upload a CV file to Azure Blob Storage.
+    Upload a file to Azure Blob Storage with the appropriate directory structure.
     
     Args:
-        file_path (str): Path to the CV file to upload
+        file_path (str): Path to the file to upload
         role_id (str): ID of the role
         role_name (str): Name of the role for directory structure
-        cv_filename (str, optional): Name of the CV file, extracted from file_path if None
+        filename (str, optional): Name of the file, extracted from file_path if None
         
     Returns:
         str: Blob path if successful, None otherwise
@@ -275,12 +394,27 @@ def upload_file_to_blob_storage(file_path: str, role_id: str, role_name: str, cv
     # This will use the sanitize_filename function which now replaces spaces with underscores
     sanitized_role_name = sanitize_filename(role_name)
     
-    # Extract CV filename if not provided
-    if cv_filename is None:
-        cv_filename = os.path.basename(file_path)
+    # Extract filename if not provided
+    if filename is None:
+        filename = os.path.basename(file_path)
     
-    # Create blob path with roles/roleid_rolename/cvs/<cv_name> structure
-    blob_filename = f"roles/{role_id}_{sanitized_role_name}/cvs/{cv_filename}"
+    # Determine the subdirectory based on the file path and name
+    if "/cvs/" in file_path or "\\cvs\\" in file_path:
+        # CV file
+        subdirectory = "cvs"
+    elif "/jd/" in file_path or "\\jd\\" in file_path:
+        if filename == "am_insight.txt":
+            # AM Comments file
+            subdirectory = "jd"
+        else:
+            # Job Description file
+            subdirectory = "jd"
+    else:
+        # Default to cvs if we can't determine
+        subdirectory = "cvs"
+    
+    # Create blob path with roles/roleid_rolename/subdirectory/<filename> structure
+    blob_filename = f"roles/{role_id}_{sanitized_role_name}/{subdirectory}/{filename}"
     
     try:    
         # Connect to blob storage
@@ -361,28 +495,28 @@ def upload_downloaded_cvs(downloaded_paths: List[str]) -> int:
 
 def process_cvs():
     """Run the download and upload process."""
-    logger.info("=== Starting CV Download and Upload Process ===")
+    logger.info("=== Starting Download and Upload Process ===")
     logger.info(f"Azure Storage Account: {AZURE_STORAGE_ACCOUNT_NAME}")
     logger.info(f"Azure Container: {AZURE_CONTAINER_NAME}")
     
-    # Download CVs
-    logger.info("Starting CV download process...")
-    downloaded_cvs, downloaded_paths = process_roles_and_cvs()
+    # Download files (CVs, JDs, AM Comments)
+    logger.info("Starting download process...")
+    total_files, downloaded_paths = process_roles_and_cvs()
     
-    # Upload CVs
-    logger.info("Starting CV upload process...")
-    uploaded_cvs = upload_downloaded_cvs(downloaded_paths)
+    # Upload all files
+    logger.info("Starting upload process...")
+    uploaded_files = upload_downloaded_cvs(downloaded_paths)
     
     # Log final summary
     logger.info("=== Process Summary ===")
-    logger.info(f"Total CVs downloaded: {downloaded_cvs}")
-    logger.info(f"Total CVs uploaded to Azure: {uploaded_cvs}")
+    logger.info(f"Total files downloaded: {total_files}")
+    logger.info(f"Total files uploaded to Azure: {uploaded_files}")
     logger.info("=== Process Completed ===")
     
     return {
-        "success": downloaded_cvs > 0 and uploaded_cvs > 0,
-        "cvs_downloaded": downloaded_cvs,
-        "cvs_uploaded": uploaded_cvs
+        "success": total_files > 0 and uploaded_files > 0,
+        "files_downloaded": total_files,
+        "files_uploaded": uploaded_files
     }
 
 # Create Flask app
