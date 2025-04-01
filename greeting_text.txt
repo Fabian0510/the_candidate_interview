@@ -1,4 +1,4 @@
-Good morning, {candidate_name}! 
+Hello, {candidate_name}! 
 
 Welcome to The Candidate's interview platform for the {role_name} position.
 
